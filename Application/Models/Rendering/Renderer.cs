@@ -72,9 +72,9 @@ namespace ToolKitV.Models.Rendering
         // Pipeline
         private VertexShader?   _vs;
         private PixelShader?    _ps;
-        private Buffer          _cb;
-        private SamplerState    _sampler;
-        private RasterizerState _rs;
+        private Buffer?          _cb;
+        private SamplerState?    _sampler;
+        private RasterizerState? _rs;
         private byte[]?         _vsBlob;
 
         // Texture cache: name → SRV (case-insensitive, matches YTD names)
@@ -493,9 +493,9 @@ namespace ToolKitV.Models.Rendering
             ClearGeometries();
             foreach (var srv in _textures.Values) srv.Dispose();
             _textures.Clear();
-            _sampler.Dispose();
-            _rs.Dispose();
-            _cb.Dispose();
+            _sampler?.Dispose();
+            _rs?.Dispose();
+            _cb?.Dispose();
             _vs?.Dispose();
             _ps?.Dispose();
             _rtv?.Dispose();

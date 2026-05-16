@@ -101,18 +101,42 @@ namespace ToolKitV.Views
             NavigateTo?.Invoke("AudioViewer");
         }
 
+        private void YtdSplitter_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (_activeView == "YtdSplitter") return;
+            SetActiveItem("YtdSplitter");
+            NavigateTo?.Invoke("YtdSplitter");
+        }
+
+        private void ServerLinter_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (_activeView == "ServerLinter") return;
+            SetActiveItem("ServerLinter");
+            NavigateTo?.Invoke("ServerLinter");
+        }
+
+        private void SirenBuilder_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (_activeView == "SirenBuilder") return;
+            SetActiveItem("SirenBuilder");
+            NavigateTo?.Invoke("SirenBuilder");
+        }
+
         // ── Visual state ──────────────────────────────────────────────────────
 
         private void SetActiveItem(string view)
         {
             _activeView = view;
 
-            bool texActive      = view == "TextureOptimizer";
-            bool vehiclesActive = view == "VehicleTools";
-            bool assetActive    = view == "AssetAnalyzer";
-            bool modelActive    = view == "ModelViewer";
-            bool clothingActive = view == "ClothingTools";
-            bool audioActive    = view == "AudioViewer";
+            bool texActive           = view == "TextureOptimizer";
+            bool vehiclesActive      = view == "VehicleTools";
+            bool assetActive         = view == "AssetAnalyzer";
+            bool modelActive         = view == "ModelViewer";
+            bool clothingActive      = view == "ClothingTools";
+            bool audioActive         = view == "AudioViewer";
+            bool ytdSplitActive      = view == "YtdSplitter";
+            bool serverLinterActive  = view == "ServerLinter";
+            bool sirenBuilderActive  = view == "SirenBuilder";
 
             // Texture Optimizer item
             TextureOptimizerBg.Visibility         = texActive ? Visibility.Visible   : Visibility.Collapsed;
@@ -160,11 +184,38 @@ namespace ToolKitV.Views
                 : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
 
             // Audio Viewer item
-            AudioViewerActiveBg.Visibility         = audioActive ? Visibility.Visible   : Visibility.Collapsed;
+            AudioViewerActiveBg.Visibility   = audioActive ? Visibility.Visible   : Visibility.Collapsed;
             AudioViewerInactiveBg.Visibility = audioActive ? Visibility.Collapsed : Visibility.Visible;
             AudioViewerStripe.Visibility     = audioActive ? Visibility.Visible   : Visibility.Collapsed;
             AudioViewerLabel.FontWeight      = audioActive ? FontWeights.Bold     : FontWeights.Normal;
             AudioViewerLabel.Foreground      = audioActive
+                ? new SolidColorBrush(Colors.White)
+                : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
+
+            // YTD Splitter item
+            YtdSplitterBg.Visibility         = ytdSplitActive ? Visibility.Visible   : Visibility.Collapsed;
+            YtdSplitterInactiveBg.Visibility = ytdSplitActive ? Visibility.Collapsed : Visibility.Visible;
+            YtdSplitterStripe.Visibility     = ytdSplitActive ? Visibility.Visible   : Visibility.Collapsed;
+            YtdSplitterLabel.FontWeight      = ytdSplitActive ? FontWeights.Bold     : FontWeights.Normal;
+            YtdSplitterLabel.Foreground      = ytdSplitActive
+                ? new SolidColorBrush(Colors.White)
+                : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
+
+            // Server Linter item
+            ServerLinterBg.Visibility         = serverLinterActive ? Visibility.Visible   : Visibility.Collapsed;
+            ServerLinterInactiveBg.Visibility = serverLinterActive ? Visibility.Collapsed : Visibility.Visible;
+            ServerLinterStripe.Visibility     = serverLinterActive ? Visibility.Visible   : Visibility.Collapsed;
+            ServerLinterLabel.FontWeight      = serverLinterActive ? FontWeights.Bold     : FontWeights.Normal;
+            ServerLinterLabel.Foreground      = serverLinterActive
+                ? new SolidColorBrush(Colors.White)
+                : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
+
+            // Siren Builder item
+            SirenBuilderBg.Visibility         = sirenBuilderActive ? Visibility.Visible   : Visibility.Collapsed;
+            SirenBuilderInactiveBg.Visibility = sirenBuilderActive ? Visibility.Collapsed : Visibility.Visible;
+            SirenBuilderStripe.Visibility     = sirenBuilderActive ? Visibility.Visible   : Visibility.Collapsed;
+            SirenBuilderLabel.FontWeight      = sirenBuilderActive ? FontWeights.Bold     : FontWeights.Normal;
+            SirenBuilderLabel.Foreground      = sirenBuilderActive
                 ? new SolidColorBrush(Colors.White)
                 : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
         }
