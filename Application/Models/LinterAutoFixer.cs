@@ -259,7 +259,166 @@ namespace ToolKitV.Models
             return fixedCount;
         }
 
-        // ─── Conflict Resolution ─────────────────────────────────────────────────────
+        // ─── server.cfg Order Validator / Fixer ──────────────────────────────────────
+
+        /// <summary>
+        /// Reads server.cfg, validates load order against the canonical FiveM dependency chain,
+        /// reorders <c>ensure</c> / <c>start</c> lines to match, and appends any installed
+        /// resource that does not yet have an entry. Creates a .tg_backup before writing.
+        /// </summary>
+        public static async Task<(int reordered, int added)> FixServerCfgOrderAsync(
+            IFileSystemProvider fs,
+            string              serverRootPath,
+            HashSet<string>     installedResources,
+            LogWriter?          log)
+        {
+            log?.LogWrite("=== server.cfg Load-Order Validator ===");
+
+            string sep     = serverRootPath.Contains('/') ? "/" : "\\";
+            string cfgPath = serverRootPath.TrimEnd('/', '\\') + sep + "server.cfg";
+
+            string original;
+            try   { original = await fs.ReadAllTextAsync(cfgPath); }
+            catch { log?.LogWrite("[SKIP] server.cfg not found or unreadable."); return (0, 0); }
+
+            // ── Canonical tier order ──────────────────────────────────────────────────
+            // Lower index = must start earlier. Scripts not in this list go to tier 99.
+            var tierMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+            {
+                // Tier 0 — Core FiveM & database
+                ["mapmanager"]      = 0, ["sessionmanager"] = 0, ["spawnmanager"]  = 0,
+                ["basic-gamemode"]  = 0, ["hardcap"]        = 0,
+                // Tier 1 — Overextended libs (must precede everything using them)
+                ["ox_lib"]          = 1, ["oxmysql"]        = 1,
+                // Tier 2 — Framework core
+                ["qbx_core"]        = 2, ["qb-core"]        = 2, ["es_extended"]   = 2,
+                // Tier 3 — Core framework dependencies
+                ["ox_inventory"]    = 3, ["qb-inventory"]   = 3, ["qbx_inventory"] = 3,
+                ["qs-inventory"]    = 3, ["jpr-inventory"]  = 3, ["ps-inventory"]  = 3,
+                ["ox_target"]       = 3, ["qb-target"]      = 3, ["qbx_target"]    = 3,
+                // Tier 4 — Voice / audio (before gameplay scripts)
+                ["pma-voice"]       = 4, ["saltychat"]      = 4,
+                // Tier 5 — Utility libs that gameplay scripts depend on
+                ["xd_lib"]          = 5, ["jpr-libs"]       = 5, ["boii_utils"]    = 5,
+                ["lation_core"]     = 5, ["lation_ui"]      = 5, ["wasabi_bridge"] = 5,
+                // Tier 6 — Phone (needed early for webhook hooks)
+                ["jpr-phonesystem"] = 6, ["lb-phone"]       = 6, ["qs-smartphone"] = 6,
+                // Tier 7 — Everything else (premium gameplay scripts) — implicit tier 99
+            };
+
+            // ── Parse server.cfg lines ────────────────────────────────────────────────
+            var lines        = original.Split('\n').ToList();
+            var ensureLines  = new List<(int lineIdx, string resource, bool isComment)>();
+
+            for (int i = 0; i < lines.Count; i++)
+            {
+                string trimmed = lines[i].TrimStart();
+                bool   commented = trimmed.StartsWith('#');
+                string effective = commented ? trimmed.TrimStart('#', ' ') : trimmed;
+
+                var m = Regex.Match(effective, @"^(?:ensure|start)\s+(\S+)", RegexOptions.IgnoreCase);
+                if (m.Success)
+                    ensureLines.Add((i, m.Groups[1].Value, commented));
+            }
+
+            // ── Detect ordering violations ────────────────────────────────────────────
+            int previousTier  = -1;
+            int reordered     = 0;
+            var violations    = new List<(int lineIdx, string resource)>();
+
+            foreach (var (lineIdx, resource, isComment) in ensureLines)
+            {
+                if (isComment) continue;
+                int tier = tierMap.TryGetValue(resource, out int t) ? t : 99;
+                if (tier < previousTier)
+                    violations.Add((lineIdx, resource));
+                else
+                    previousTier = tier;
+            }
+
+            // ── Reorder: extract all ensure lines, sort by tier, reinsert ─────────────
+            if (violations.Count > 0)
+            {
+                log?.LogWrite($"[ORDER] {violations.Count} ordering violation(s) detected. Reordering...");
+
+                // Pull all active (non-commented) ensure entries out
+                var activeEnsures = ensureLines
+                    .Where(e => !e.isComment)
+                    .OrderBy(e => tierMap.TryGetValue(e.resource, out int t) ? t : 99)
+                    .ThenBy(e => e.resource)
+                    .ToList();
+
+                // Build new ensure block
+                var ensureBlock = activeEnsures
+                    .Select(e => $"ensure {e.resource}")
+                    .ToList();
+
+                // Remove old ensure lines from original (highest index first to preserve positions)
+                var removeIdxs = ensureLines
+                    .Where(e => !e.isComment)
+                    .Select(e => e.lineIdx)
+                    .OrderByDescending(i => i)
+                    .ToList();
+
+                foreach (int idx in removeIdxs)
+                    lines.RemoveAt(idx);
+
+                // Find insertion point: first line after the last comment block / convar block
+                int insertAt = 0;
+                for (int i = 0; i < lines.Count; i++)
+                {
+                    string t = lines[i].TrimStart();
+                    if (t.StartsWith("set ") || t.StartsWith("setr ") || t.StartsWith("sv_") ||
+                        t.StartsWith("endpoint_") || t.StartsWith("load_server_icon"))
+                        insertAt = i + 1;
+                }
+
+                lines.Insert(insertAt, "");
+                lines.Insert(insertAt + 1, "# ── Load Order (managed by TGToolKit) ─────────────────────");
+                for (int i = 0; i < ensureBlock.Count; i++)
+                    lines.Insert(insertAt + 2 + i, ensureBlock[i]);
+
+                reordered = activeEnsures.Count;
+            }
+
+            // ── Add missing ensures ───────────────────────────────────────────────────
+            int added = 0;
+            var alreadyEnsured = new HashSet<string>(
+                ensureLines.Select(e => e.resource), StringComparer.OrdinalIgnoreCase);
+
+            var missing = installedResources
+                .Where(r => !alreadyEnsured.Contains(r))
+                .OrderBy(r => tierMap.TryGetValue(r, out int t) ? t : 99)
+                .ThenBy(r => r)
+                .ToList();
+
+            if (missing.Count > 0)
+            {
+                lines.Add("");
+                lines.Add("# ── Resources detected by TGToolKit (not yet in server.cfg) ──");
+                foreach (var m in missing)
+                {
+                    lines.Add($"ensure {m}");
+                    log?.LogWrite($"[ADDED] ensure {m}");
+                    added++;
+                }
+            }
+
+            if (reordered > 0 || added > 0)
+            {
+                await fs.CreateBackupAsync(cfgPath);
+                await fs.WriteAllTextAsync(cfgPath, string.Join('\n', lines));
+                log?.LogWrite($"[ORDER] Done. {reordered} line(s) reordered, {added} line(s) added.");
+            }
+            else
+            {
+                log?.LogWrite("[ORDER] server.cfg load order is already correct. No changes needed.");
+            }
+
+            return (reordered, added);
+        }
+
+
 
         /// <summary>
         /// Quarantines "loser" scripts for each conflict category the user resolved.

@@ -12,8 +12,9 @@
         AllowsTransparency="True">
 
     <Window.Resources>
-        <local:BoolToFontWeightConverter  x:Key="BoolBold"/>
-        <local:BoolToVisibilityConverter  x:Key="BoolVisible"/>
+        <local:BoolToFontWeightConverter       x:Key="BoolBold"/>
+        <local:BoolToVisibilityConverter       x:Key="BoolVisible"/>
+        <local:DefaultBadgeVisibilityConverter x:Key="MultiBoolVisible"/>
 
         <Style x:Key="CategoryCard" TargetType="Border">
             <Setter Property="Background"      Value="#161616"/>
@@ -106,14 +107,29 @@
                                                                  Content="{Binding ScriptName}"
                                                                  FontWeight="{Binding IsRecommended, Converter={StaticResource BoolBold}}"/>
 
+                                                    <!-- RECOMMENDED badge -->
                                                     <Border Grid.Column="1"
                                                             Background="#1A4CFF70" BorderBrush="#4CFF70"
                                                             BorderThickness="1" CornerRadius="4"
                                                             Padding="5,1" Margin="8,0,0,0"
                                                             Visibility="{Binding IsRecommended, Converter={StaticResource BoolVisible}}">
                                                         <TextBlock Text="✓ RECOMMENDED" Foreground="#4CFF70"
-                                                                   FontSize="9" FontWeight="Bold"
-                                                                   FontFamily="Fonts/#TT Norms"/>
+                                                                   FontSize="9" FontWeight="Bold" FontFamily="Fonts/#TT Norms"/>
+                                                    </Border>
+
+                                                    <!-- DEFAULT badge (only shown when NOT recommended) -->
+                                                    <Border Grid.Column="1"
+                                                            Background="#1AFFA500" BorderBrush="#886633"
+                                                            BorderThickness="1" CornerRadius="4"
+                                                            Padding="5,1" Margin="8,0,0,0">
+                                                        <Border.Visibility>
+                                                            <MultiBinding Converter="{StaticResource MultiBoolVisible}">
+                                                                <Binding Path="IsDefault"/>
+                                                                <Binding Path="IsRecommended"/>
+                                                            </MultiBinding>
+                                                        </Border.Visibility>
+                                                        <TextBlock Text="FRAMEWORK DEFAULT" Foreground="#FFA500"
+                                                                   FontSize="9" FontWeight="Bold" FontFamily="Fonts/#TT Norms"/>
                                                     </Border>
                                                 </Grid>
                                             </DataTemplate>

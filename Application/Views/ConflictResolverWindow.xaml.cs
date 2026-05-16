@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.Linq;
 using System.Windows;
 using System.Windows.Data;
 using ToolKitV.Models;
@@ -29,13 +30,31 @@ namespace ToolKitV.Views
         public object ConvertBack(object v, Type t, object p, CultureInfo c) => throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// Multi-binding: Visible when values[0]=true (IsDefault) AND values[1]=false (IsRecommended).
+    /// Shows the FRAMEWORK DEFAULT badge only on non-recommended defaults.
+    /// </summary>
+    public class DefaultBadgeVisibilityConverter : IMultiValueConverter
+    {
+        public static readonly DefaultBadgeVisibilityConverter Instance = new();
+        public object Convert(object[] values, Type t, object p, CultureInfo c)
+        {
+            bool isDefault     = values.Length > 0 && values[0] is true;
+            bool isRecommended = values.Length > 1 && values[1] is true;
+            return (isDefault && !isRecommended) ? Visibility.Visible : Visibility.Collapsed;
+        }
+        public object[] ConvertBack(object v, Type[] t, object p, CultureInfo c) => throw new NotImplementedException();
+    }
+
     // ─── ViewModels ───────────────────────────────────────────────────────────────
 
     public class ScriptChoiceViewModel : INotifyPropertyChanged
     {
         public string ScriptName     { get; init; } = string.Empty;
-        public string GroupName      { get; init; } = string.Empty;   // = CategoryTitle
+        public string GroupName      { get; init; } = string.Empty;
         public bool   IsRecommended  { get; init; }
+        /// <summary>True when this script is a known QBCore/Qbox framework default.</summary>
+        public bool   IsDefault      { get; init; }
 
         private bool _isSelected;
         public bool IsSelected
@@ -93,39 +112,66 @@ namespace ToolKitV.Views
 
             foreach (var (cat, scripts) in conflicts)
             {
+                // Determine the recommended winner (premium-first, never a framework default)
                 string? preferred = ConflictDefinitions.GetPreferredWinner(cat, installed);
 
                 var choices = new ObservableCollection<ScriptChoiceViewModel>();
-                bool anyChecked = false;
 
                 foreach (var script in scripts)
                 {
-                    bool isRec  = script.Equals(preferred, StringComparison.OrdinalIgnoreCase);
-                    var  choice = new ScriptChoiceViewModel
+                    bool isDefault = ConflictDefinitions.FrameworkDefaultScripts.Contains(script);
+                    bool isRec     = script.Equals(preferred, StringComparison.OrdinalIgnoreCase);
+
+                    choices.Add(new ScriptChoiceViewModel
                     {
                         ScriptName    = script,
                         GroupName     = cat.Title,
                         IsRecommended = isRec,
-                        IsSelected    = isRec && !anyChecked
-                    };
-                    if (choice.IsSelected) anyChecked = true;
-                    choices.Add(choice);
+                        IsDefault     = isDefault,
+                        IsSelected    = false   // will be set by PreSelectWinner
+                    });
                 }
 
-                // Fallback: select first if nothing was recommended
-                if (!anyChecked && choices.Count > 0)
-                    choices[0].IsSelected = true;
+                PreSelectWinner(choices, preferred);
 
                 result.Add(new ConflictGroupViewModel
                 {
-                    CategoryTitle  = cat.Title,
-                    Description    = cat.Description,
-                    ConflictCount  = scripts.Count,
+                    CategoryTitle   = cat.Title,
+                    Description     = cat.Description,
+                    ConflictCount   = scripts.Count,
                     DetectedScripts = choices
                 });
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Selects the best winner in a group:
+        /// 1. Explicitly preferred script (from ecosystem detection)
+        /// 2. First non-framework-default script
+        /// 3. First script (fallback)
+        /// </summary>
+        private static void PreSelectWinner(
+            ObservableCollection<ScriptChoiceViewModel> choices,
+            string? preferred)
+        {
+            foreach (var c in choices) c.IsSelected = false;
+
+            // Pass 1: explicit ecosystem recommendation
+            if (preferred != null)
+            {
+                var rec = choices.FirstOrDefault(
+                    c => c.ScriptName.Equals(preferred, StringComparison.OrdinalIgnoreCase));
+                if (rec != null) { rec.IsSelected = true; return; }
+            }
+
+            // Pass 2: any premium (non-default) script
+            var premium = choices.FirstOrDefault(c => !c.IsDefault);
+            if (premium != null) { premium.IsSelected = true; return; }
+
+            // Pass 3: fallback to first
+            if (choices.Count > 0) choices[0].IsSelected = true;
         }
 
         // ── Handlers ────────────────────────────────────────────────────────────
