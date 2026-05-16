@@ -1,0 +1,163 @@
+<Window x:Class="ToolKitV.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ToolKitV"
+        xmlns:uc="clr-namespace:ToolKitV.Views"
+        mc:Ignorable="d"
+        Title="TGToolKit" Width="1280" Height="720"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        FocusVisualStyle="{x:Null}">
+
+    <!-- Deep dark background with a subtle red-tinted radial glow -->
+    <Window.Background>
+        <SolidColorBrush Color="#0D0D0F"/>
+    </Window.Background>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48"/>
+            <!-- Title bar -->
+            <RowDefinition Height="*"/>
+            <!-- Content -->
+        </Grid.RowDefinitions>
+
+        <!-- Ambient red glow overlay in top-left -->
+        <Ellipse Grid.RowSpan="2"
+                 Width="600" Height="400"
+                 HorizontalAlignment="Left" VerticalAlignment="Top"
+                 Margin="-100 -150 0 0"
+                 IsHitTestVisible="False">
+            <Ellipse.Fill>
+                <RadialGradientBrush>
+                    <GradientStop Color="#25C0132A" Offset="0"/>
+                    <GradientStop Color="#00000000" Offset="1"/>
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+
+        <!-- ═══════════════ TITLE BAR ═══════════════ -->
+        <Grid Grid.Row="0" MouseDown="StackPanel_MouseDown" Background="Transparent">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Logo + name -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20 0 0 0">
+                <!-- Red accent bar -->
+                <Border Width="3" Height="18" CornerRadius="2" Margin="0 0 10 0">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#FF3A3A" Offset="0"/>
+                            <GradientStop Color="#C0132A" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+                <TextBlock Text="TGToolKit"
+                           Foreground="#FFFFFF"
+                           FontFamily="Fonts/#TT Norms"
+                           FontSize="14"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"/>
+                <TextBlock x:Name="AppSubtitle"
+                           Text="  FiveM Texture Optimizer"
+                           Foreground="#4DFFFFFF"
+                           FontFamily="Fonts/#TT Norms"
+                           FontSize="11"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Window controls -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0 0 8 0">
+                <Button Cursor="Hand" BorderThickness="0" Click="MinimizeButton_Click" ToolTip="Minimize">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Width="36" Height="36" CornerRadius="6"
+                                                Background="{TemplateBinding Background}">
+                                            <TextBlock Text="—" Foreground="#80FFFFFF" FontSize="11"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#18FFFFFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button Cursor="Hand" BorderThickness="0" Click="CloseButton_Click" ToolTip="Close">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Width="36" Height="36" CornerRadius="6"
+                                                Background="{TemplateBinding Background}">
+                                            <TextBlock Text="✕" Foreground="#80FFFFFF" FontSize="11"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#BEC0132A"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Thin red separator line under title bar -->
+        <Rectangle Grid.Row="0" Height="1" VerticalAlignment="Bottom">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Color="#C0132A" Offset="0"/>
+                    <GradientStop Color="#40C0132A" Offset="0.5"/>
+                    <GradientStop Color="#00000000" Offset="1"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220"/>
+                <!-- Sidebar -->
+                <ColumnDefinition Width="1"/>
+                <!-- Divider -->
+                <ColumnDefinition Width="*"/>
+                <!-- Main panel -->
+            </Grid.ColumnDefinitions>
+
+            <!-- Sidebar separator -->
+            <Rectangle Grid.Column="1">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#30FFFFFF" Offset="0"/>
+                        <GradientStop Color="#05FFFFFF" Offset="1"/>
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <!-- ─── SIDEBAR ─── -->
+            <uc:Menu x:Name="SideMenu" Grid.Column="0"/>
+
+            <!-- ─── MAIN PANEL (content swaps on navigation) ─── -->
+            <ContentControl x:Name="MainContent" Grid.Column="2"/>
+        </Grid>
+    </Grid>
+</Window>

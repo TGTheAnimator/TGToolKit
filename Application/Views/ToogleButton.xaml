@@ -1,0 +1,75 @@
+<UserControl x:Class="ToolKitV.Views.ToogleButton"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:ToolKitV.Views"
+             mc:Ignorable="d"
+             d:DataContext="{Binding Mode=Default, RelativeSource={RelativeSource Self}}">
+    <StackPanel>
+        <!-- Title row with pill toggle -->
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <TextBlock Text="{Binding Title}"
+                       Foreground="#E0FFFFFF"
+                       FontFamily="Fonts/#TT Norms"
+                       FontSize="13"
+                       VerticalAlignment="Center"
+                       Margin="0 0 10 0"/>
+
+            <!-- Pill-style toggle -->
+            <ToggleButton Width="36" Height="20"
+                          Click="ToggleButton_Click"
+                          Cursor="Hand">
+                <ToggleButton.Style>
+                    <Style TargetType="ToggleButton">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <!-- Track -->
+                                    <Border x:Name="Track"
+                                            Width="36" Height="20"
+                                            CornerRadius="10"
+                                            BorderThickness="1"
+                                            BorderBrush="#25FFFFFF"
+                                            Background="#15FFFFFF">
+                                        <!-- Knob -->
+                                        <Ellipse x:Name="Knob"
+                                                 Width="14" Height="14"
+                                                 HorizontalAlignment="Left"
+                                                 Margin="2 0 0 0"
+                                                 Fill="#60FFFFFF"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsToogled}" Value="True">
+                                            <Setter TargetName="Track" Property="Background">
+                                                <Setter.Value>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                        <GradientStop Color="#C0132A" Offset="0"/>
+                                                        <GradientStop Color="#FF4444" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Setter TargetName="Track" Property="BorderBrush" Value="#80C0132A"/>
+                                            <Setter TargetName="Knob" Property="Fill" Value="#FFFFFF"/>
+                                            <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter TargetName="Knob" Property="Margin" Value="0 0 2 0"/>
+                                        </DataTrigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ToggleButton.Style>
+            </ToggleButton>
+        </StackPanel>
+
+        <!-- Description -->
+        <TextBlock Text="{Binding Description}"
+                   Foreground="#45FFFFFF"
+                   FontFamily="Fonts/#TT Norms"
+                   FontSize="11"
+                   TextWrapping="Wrap"
+                   Margin="0 3 0 0"
+                   MaxWidth="340"/>
+    </StackPanel>
+</UserControl>

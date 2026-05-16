@@ -1,0 +1,39 @@
+<UserControl x:Class="ToolKitV.Views.ModelViewer"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:ToolKitV.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="720" d:DesignWidth="1080">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- The 3D Viewport -->
+        <Border Grid.Column="0" Margin="20" CornerRadius="12" ClipToBounds="True" BorderBrush="#30FFFFFF" BorderThickness="1">
+            <local:ViewportControl x:Name="Viewport3D"/>
+        </Border>
+
+        <!-- Sidebar controls -->
+        <Border Grid.Column="1" Background="#15151A" CornerRadius="12" Margin="0,20,20,20" Padding="20">
+            <StackPanel>
+                <TextBlock Text="MODEL VIEWER" Foreground="White" FontSize="24" FontWeight="Bold" FontFamily="{StaticResource TT Norms Bold}"/>
+                <TextBlock Text="Preview YDR and YFT assets." Foreground="#A0FFFFFF" FontSize="14" FontFamily="{StaticResource TT Norms Regular}" Margin="0,5,0,20" TextWrapping="Wrap"/>
+
+                <Border Background="#20FFFFFF" Height="1" Margin="0,0,0,20"/>
+
+                <TextBlock Text="High Performance 3D rendering powered by DirectX 11. Toggle to conserve resources." Foreground="#80FFFFFF" FontSize="12" FontFamily="{StaticResource TT Norms Regular}" Margin="0,0,0,10" TextWrapping="Wrap"/>
+                
+                <local:ToogleButton x:Name="ToggleViewportBtn" Height="30" Margin="0,0,0,20" PropertyChanged="ToggleViewportBtn_PropertyChanged"/>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                    <Button x:Name="LoadModelBtn" Content="Load Model (YDR/YFT)" Style="{StaticResource ModernButtonStyle}" Width="160" Margin="0,0,10,0" Click="LoadModelBtn_Click"/>
+                    <Button x:Name="LoadTextureBtn" Content="Load YTD Texture" Style="{StaticResource ModernButtonStyle}" Width="150"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <LangVersion>12.0</LangVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <UseWPF>true</UseWPF>
+    <Authors>TGTheAnimator</Authors>
+    <AssemblyName>TGToolKit</AssemblyName>
+    <RootNamespace>ToolKitV</RootNamespace>
+    <SignAssembly>false</SignAssembly>
+    <ApplicationIcon>Assets\Images\logo.ico</ApplicationIcon>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Optimize>false</Optimize>
+    <PlatformTarget>x64</PlatformTarget>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CodeWalker.Core" Version="1.0.3" />
+    <PackageReference Include="NAudio" Version="2.3.0" />
+    <PackageReference Include="SharpDX" Version="4.2.0" />
+    <PackageReference Include="SharpDX.D3DCompiler" Version="4.2.0" />
+    <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
+    <PackageReference Include="SharpDX.Direct3D9" Version="4.2.0" />
+    <PackageReference Include="SharpDX.DXGI" Version="4.2.0" />
+    <PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\Images\clothesIcon.png" />
+    <Resource Include="Assets\Images\cross.png" />
+    <Resource Include="Assets\Images\discord.png" />
+    <Resource Include="Assets\Images\logo_small_grey.png" />
+    <Resource Include="Assets\Images\minus-outlined.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\Images\textureIcon.png" />
+    <Resource Include="Assets\Images\vehiclesIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\Fonts\*.ttf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Assets\Images\logo.ico" />
+    <Content Include="Models\Rendering\DefaultShader.hlsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\Images\bg.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Dependencies\texconv.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>

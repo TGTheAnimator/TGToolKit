@@ -1,0 +1,68 @@
+<UserControl x:Class="ToolKitV.Views.AudioViewer"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="720" d:DesignWidth="1080">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Visualization / Waveform area -->
+        <Border Grid.Column="0" Margin="20" CornerRadius="12" Background="#101015" BorderBrush="#30FFFFFF" BorderThickness="1">
+            <Grid>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Path Data="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M10,17L16,12L10,7V17Z" Fill="#40FFFFFF" Stretch="Uniform" Width="80" Height="80"/>
+                    <TextBlock x:Name="CurrentlyPlayingText" Text="Select an audio file to preview" Foreground="#50FFFFFF" FontSize="16" Margin="0,20,0,0" HorizontalAlignment="Center"/>
+                </StackPanel>
+                
+                <!-- Simple playback bar -->
+                <Border VerticalAlignment="Bottom" Margin="40" Background="#20FFFFFF" CornerRadius="10" Height="60" Padding="20,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <Button x:Name="PlayPauseBtn" Content="▶" Background="Transparent" Foreground="White" BorderThickness="0" FontSize="20" Width="40" Cursor="Hand"/>
+                        
+                        <Slider x:Name="PlaybackSlider" Grid.Column="1" Margin="20,0" VerticalAlignment="Center" IsMoveToPointEnabled="True"/>
+                        
+                        <TextBlock x:Name="TimeText" Grid.Column="2" Text="00:00 / 00:00" Foreground="#A0FFFFFF" VerticalAlignment="Center" FontSize="12"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Sidebar controls -->
+        <Border Grid.Column="1" Background="#15151A" CornerRadius="12" Margin="0,20,20,20" Padding="20">
+            <StackPanel>
+                <TextBlock Text="AUDIO PREVIEW" Foreground="White" FontSize="24" FontWeight="Bold" FontFamily="{StaticResource TT Norms Bold}"/>
+                <TextBlock Text="Inspect and verify AWC audio quality." Foreground="#A0FFFFFF" FontSize="14" FontFamily="{StaticResource TT Norms Regular}" Margin="0,5,0,20" TextWrapping="Wrap"/>
+
+                <Border Background="#20FFFFFF" Height="1" Margin="0,0,0,20"/>
+
+                <Button x:Name="LoadAwcBtn" Content="Load AWC File" Height="40" Background="#3B82F6" Foreground="White" BorderThickness="0" FontFamily="{StaticResource TT Norms Bold}" Cursor="Hand"/>
+                
+                <TextBlock Text="STREAMS" Foreground="#80FFFFFF" FontSize="12" FontWeight="Bold" Margin="0,20,0,10"/>
+                
+                <ListBox x:Name="StreamList" Background="Transparent" BorderThickness="0" Foreground="White" Height="400">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="10" Background="#10FFFFFF" CornerRadius="5" Margin="0,0,0,5">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding LengthStr}" Foreground="#80FFFFFF" Margin="10,0,0,0" FontSize="10" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

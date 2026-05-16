@@ -1,0 +1,223 @@
+<UserControl x:Class="ToolKitV.Views.TextureOptimization"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:ToolKitV.Views"
+             mc:Ignorable="d">
+
+    <!-- Root: 3-column layout — settings | divider | stats -->
+    <Grid Margin="28 20 28 20" AllowDrop="True" Drop="UIElement_OnDrop">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="380"/>
+            <ColumnDefinition Width="24"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ══════════════════════════════════════════
+             COLUMN 0 — Settings + Action Buttons
+             The DockPanel keeps buttons pinned to the
+             bottom regardless of content height.
+        ══════════════════════════════════════════ -->
+        <DockPanel Grid.Column="0" LastChildFill="True">
+
+            <!-- Action buttons — pinned to bottom -->
+            <Grid DockPanel.Dock="Bottom" Margin="0 16 0 0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- OPTIMIZE button -->
+                <local:Button x:Name="OptimizeButton"
+                              Grid.Column="0"
+                              Title="Optimize"
+                              IsButtonEnabledValue="False"
+                              Click="OptimizeButton_Click"/>
+
+                <!-- ANALYZE button -->
+                <local:Button x:Name="AnalyzeButton"
+                              Grid.Column="2"
+                              Title="Analyze"
+                              IsButtonEnabledValue="False"
+                              Click="AnalyzeButton_Click"/>
+            </Grid>
+
+            <!-- Scrollable settings area -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="0 0 8 0">
+                <StackPanel>
+
+                    <!-- ─── Section: Folders ─── -->
+                    <TextBlock Text="FOLDERS"
+                               Foreground="#40FFFFFF"
+                               FontFamily="Fonts/#TT Norms"
+                               FontSize="10"
+                               FontWeight="Bold"
+                               Margin="0 0 0 10"/>
+
+                    <local:SelectFolder
+                        x:Name="MainFolder"
+                        Title="Textures Folder"
+                        PropertyChanged="OnMainPathChanged"/>
+
+                    <local:SelectFolder
+                        x:Name="BackupFolder"
+                        Title="Backup Folder (optional)"
+                        Margin="0 12 0 0"
+                        PropertyChanged="OnBackupPathChanged"/>
+
+                    <!-- ─── Section: Options ─── -->
+                    <TextBlock Text="OPTIONS"
+                               Foreground="#40FFFFFF"
+                               FontFamily="Fonts/#TT Norms"
+                               FontSize="10"
+                               FontWeight="Bold"
+                               Margin="0 22 0 10"/>
+
+                    <local:ToogleButton
+                        x:Name="OnlyOverSized"
+                        Title="Only oversized YTDs"
+                        Description="Only process YTDs whose virtual (GPU) size exceeds 16 MB — the FiveM streaming budget threshold."
+                        PropertyChanged="OnOnlyOverSizedTexturesChanged"/>
+
+                    <local:InputNumber
+                        x:Name="OptimizeSize"
+                        Title="Optimize Size  (Width + Height px)"
+                        Description="Textures with Width+Height ≥ this are reprocessed. Default 4096 = 2048×2048."
+                        NumberValue="4096"
+                        PropertyChanged="OptimizeSize_PropertyChanged"
+                        Margin="0 8 0 0"/>
+
+                    <!-- ─── Section: Compression ─── -->
+                    <TextBlock Text="COMPRESSION"
+                               Foreground="#40FFFFFF"
+                               FontFamily="Fonts/#TT Norms"
+                               FontSize="10"
+                               FontWeight="Bold"
+                               Margin="0 22 0 10"/>
+
+                    <local:ToogleButton
+                        x:Name="Downsize"
+                        Title="Downsize  (÷2)"
+                        Description="Halves texture dimensions. Best for props &amp; vehicles. Script textures are protected automatically."
+                        PropertyChanged="Downsize_PropertyChanged"
+                        IsToogled="True"/>
+
+                    <local:ToogleButton
+                        x:Name="FormatOptimize"
+                        Title="Format Optimization  (BC7 / BC1 / BC4)"
+                        Description="Re-encodes to best block format: BC7 for RGBA, BC1 for RGB, BC4 for grayscale. Minimal quality loss."
+                        PropertyChanged="FormatOptimize_PropertyChanged"
+                        Margin="0 8 0 0"/>
+
+                    <local:ToogleButton
+                        x:Name="AutoDownscale4K"
+                        Title="Auto-Downscale 4K Textures"
+                        Description="Automatically perfectly halves the resolution of any massive 4K livery to 2048x2048. Strongly recommended."
+                        PropertyChanged="AutoDownscale4K_PropertyChanged"
+                        IsToogled="True"
+                        Margin="0 8 0 0"/>
+
+                    <!-- ─── Section: Crash Fixes ─── -->
+                    <TextBlock Text="CRASH FIXES"
+                               Foreground="#40FFFFFF"
+                               FontFamily="Fonts/#TT Norms"
+                               FontSize="10"
+                               FontWeight="Bold"
+                               Margin="0 22 0 10"/>
+
+                    <!-- Script RT crash fix card -->
+                    <Border CornerRadius="8"
+                            BorderThickness="1"
+                            BorderBrush="#35C0132A"
+                            Padding="14 12"
+                            Margin="0 0 0 8">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#18C0132A" Offset="0"/>
+                                <GradientStop Color="#0CC0132A" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <StackPanel>
+                            <TextBlock Text="⚠  Fix Script RT Crashes"
+                                       Foreground="#FFFFFFFF"
+                                       FontFamily="Fonts/#TT Norms"
+                                       FontSize="13"
+                                       FontWeight="Bold"
+                                       Margin="0 0 0 5"/>
+                            <TextBlock TextWrapping="Wrap"
+                                       Foreground="#70FFFFFF"
+                                       FontFamily="Fonts/#TT Norms"
+                                       FontSize="11"
+                                       Margin="0 0 0 10"
+                                       MaxWidth="340"
+                                       Text="Scans ALL .ytd files for compressed script_rt_* textures and decompresses them to B8G8R8A8 (D3DFMT_A8R8G8B8). Fixes fatal crashes like the gsts121.ytd / script_rt_dials_itali issue. Ignores size settings — always runs on every file."/>
+
+                            <!-- Result display -->
+                            <Border x:Name="ScriptRtResultBorder"
+                                    CornerRadius="6"
+                                    Background="#12FFFFFF"
+                                    Padding="10 7"
+                                    Margin="0 0 0 10"
+                                    Visibility="Collapsed">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="YTDs scanned: "
+                                                   Foreground="#60FFFFFF"
+                                                   FontFamily="Fonts/#TT Norms"
+                                                   FontSize="11"/>
+                                        <TextBlock x:Name="ScriptRtScanned"
+                                                   Text="0"
+                                                   Foreground="#E0FFFFFF"
+                                                   FontFamily="Fonts/#TT Norms"
+                                                   FontSize="11"
+                                                   FontWeight="Bold"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0 2 0 0">
+                                        <TextBlock Text="YTDs fixed: "
+                                                   Foreground="#60FFFFFF"
+                                                   FontFamily="Fonts/#TT Norms"
+                                                   FontSize="11"/>
+                                        <TextBlock x:Name="ScriptRtFixed"
+                                                   Text="0"
+                                                   Foreground="#FF5555"
+                                                   FontFamily="Fonts/#TT Norms"
+                                                   FontSize="11"
+                                                   FontWeight="Bold"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0 2 0 0">
+                                        <TextBlock Text="Textures decompressed: "
+                                                   Foreground="#60FFFFFF"
+                                                   FontFamily="Fonts/#TT Norms"
+                                                   FontSize="11"/>
+                                        <TextBlock x:Name="ScriptRtTextures"
+                                                   Text="0"
+                                                   Foreground="#4CFF70"
+                                                   FontFamily="Fonts/#TT Norms"
+                                                   FontSize="11"
+                                                   FontWeight="Bold"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <local:Button x:Name="FixScriptRtButton"
+                                          Title="Fix Script RT Crashes"
+                                          IsButtonEnabledValue="False"
+                                          Click="FixScriptRtButton_Click"/>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+
+            </ScrollViewer>
+        </DockPanel>
+
+        <!-- ══════════════════════════════════════════
+             COLUMN 2 — Stats Panel
+        ══════════════════════════════════════════ -->
+        <local:Stats Grid.Column="2" x:Name="Stats"/>
+    </Grid>
+</UserControl>

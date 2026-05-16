@@ -1,0 +1,86 @@
+<UserControl x:Class="ToolKitV.Views.SelectFolder"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:ToolKitV.Views"
+             mc:Ignorable="d"
+             d:DataContext="{Binding Mode=Default, RelativeSource={RelativeSource Self}}">
+    <StackPanel>
+        <!-- Label -->
+        <TextBlock Text="{Binding Title}"
+                   Foreground="#E0FFFFFF"
+                   FontFamily="Fonts/#TT Norms"
+                   FontSize="13"
+                   Margin="0 0 0 6"/>
+
+        <!-- Input row -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="44"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Path text box -->
+            <Border Grid.Column="0"
+                    CornerRadius="7"
+                    BorderThickness="1"
+                    BorderBrush="#15FFFFFF"
+                    Background="#10FFFFFF">
+                <TextBox Padding="10 0"
+                         Height="36"
+                         Background="Transparent"
+                         BorderBrush="Transparent"
+                         Foreground="#C0FFFFFF"
+                         FontFamily="Fonts/#TT Norms"
+                         FontSize="12"
+                         Text="{Binding Path, UpdateSourceTrigger=PropertyChanged}"
+                         SelectionBrush="#60C0132A"
+                         CaretBrush="#C0132A"
+                         VerticalContentAlignment="Center">
+                    <TextBox.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="7"/>
+                        </Style>
+                    </TextBox.Resources>
+                </TextBox>
+            </Border>
+
+            <!-- Browse button -->
+            <Button Grid.Column="2"
+                    Height="36"
+                    Cursor="Hand"
+                    Click="Button_Click"
+                    ToolTip="Browse for folder">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bg"
+                                            CornerRadius="7"
+                                            BorderThickness="1"
+                                            BorderBrush="#25C0132A"
+                                            Background="#20C0132A">
+                                        <TextBlock Text="…"
+                                                   Foreground="#C0FFFFFF"
+                                                   FontSize="16"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bg" Property="Background" Value="#40C0132A"/>
+                                            <Setter TargetName="Bg" Property="BorderBrush" Value="#55C0132A"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </Grid>
+    </StackPanel>
+</UserControl>
