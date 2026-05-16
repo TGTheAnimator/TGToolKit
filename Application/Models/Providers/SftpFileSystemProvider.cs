@@ -141,6 +141,13 @@ namespace ToolKitV.Models.Providers
             });
         }
 
+        /// <summary>
+        /// Renames a remote directory (or file). SSH.NET uses the same SFTP rename
+        /// operation for both — no recursive copy required.
+        /// </summary>
+        public Task RenameDirectoryAsync(string oldPath, string newPath)
+            => Task.Run(() => _client.RenameFile(oldPath, newPath));
+
         // ── Lifecycle ──────────────────────────────────────────────────────────────
 
         /// <summary>

@@ -1,0 +1,185 @@
+<Window x:Class="ToolKitV.Views.ConflictResolverWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ToolKitV.Views"
+        Title="TGToolKit — Surgical Conflict Resolution"
+        Height="560" Width="640"
+        MinHeight="420" MinWidth="520"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip"
+        Background="#0D0D0D"
+        WindowStyle="None"
+        AllowsTransparency="True">
+
+    <Window.Resources>
+        <local:BoolToFontWeightConverter  x:Key="BoolBold"/>
+        <local:BoolToVisibilityConverter  x:Key="BoolVisible"/>
+
+        <Style x:Key="CategoryCard" TargetType="Border">
+            <Setter Property="Background"      Value="#161616"/>
+            <Setter Property="BorderBrush"     Value="#2A2A2A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius"    Value="8"/>
+            <Setter Property="Margin"          Value="0,0,0,12"/>
+            <Setter Property="Padding"         Value="14,12"/>
+        </Style>
+
+        <Style TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#CCCCCC"/>
+            <Setter Property="Margin"     Value="0,4"/>
+            <Setter Property="FontFamily" Value="Fonts/#TT Norms"/>
+            <Setter Property="FontSize"   Value="12"/>
+            <Setter Property="Cursor"     Value="Hand"/>
+        </Style>
+
+        <Style x:Key="ActionBtn" TargetType="Button">
+            <Setter Property="Height"          Value="34"/>
+            <Setter Property="FontFamily"      Value="Fonts/#TT Norms"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="FontWeight"      Value="Bold"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+    </Window.Resources>
+
+    <Border Background="#0D0D0D" BorderBrush="#C0132A" BorderThickness="1" CornerRadius="10">
+        <Grid Margin="20,16,20,20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Background="Transparent"
+                    MouseLeftButtonDown="DragBar_MouseLeftButtonDown"/>
+
+            <StackPanel Grid.Row="1" Margin="0,4,0,16">
+                <DockPanel>
+                    <TextBlock Text="⚠" Foreground="#C0132A" FontSize="22"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Text="Script Conflicts Detected" Foreground="#FFFFFF"
+                               FontSize="19" FontWeight="Bold" FontFamily="Fonts/#TT Norms"
+                               VerticalAlignment="Center"/>
+                </DockPanel>
+                <TextBlock Foreground="#888888" FontSize="11" FontFamily="Fonts/#TT Norms"
+                           TextWrapping="Wrap" Margin="0,6,0,0"
+                           Text="Select your preferred resource per category. Losers are renamed .disabled_* and removed from server.cfg."/>
+            </StackPanel>
+
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
+                <ItemsControl x:Name="icConflicts">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource CategoryCard}">
+                                <StackPanel>
+                                    <DockPanel Margin="0,0,0,4">
+                                        <Border DockPanel.Dock="Right" Background="#1E1E1E"
+                                                BorderBrush="#C0132A" BorderThickness="1"
+                                                CornerRadius="4" Padding="6,2">
+                                            <TextBlock Foreground="#C0132A" FontSize="10"
+                                                       FontFamily="Fonts/#TT Norms"
+                                                       Text="{Binding ConflictCount, StringFormat='{}{0} conflict(s)'}"/>
+                                        </Border>
+                                        <TextBlock Text="{Binding CategoryTitle}" Foreground="#FFFFFF"
+                                                   FontWeight="Bold" FontSize="13"
+                                                   FontFamily="Fonts/#TT Norms" VerticalAlignment="Center"/>
+                                    </DockPanel>
+
+                                    <TextBlock Text="{Binding Description}" Foreground="#666666"
+                                               FontSize="11" FontFamily="Fonts/#TT Norms"
+                                               FontStyle="Italic" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+                                    <ItemsControl ItemsSource="{Binding DetectedScripts}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <RadioButton Grid.Column="0"
+                                                                 IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                 GroupName="{Binding GroupName}"
+                                                                 Content="{Binding ScriptName}"
+                                                                 FontWeight="{Binding IsRecommended, Converter={StaticResource BoolBold}}"/>
+
+                                                    <Border Grid.Column="1"
+                                                            Background="#1A4CFF70" BorderBrush="#4CFF70"
+                                                            BorderThickness="1" CornerRadius="4"
+                                                            Padding="5,1" Margin="8,0,0,0"
+                                                            Visibility="{Binding IsRecommended, Converter={StaticResource BoolVisible}}">
+                                                        <TextBlock Text="✓ RECOMMENDED" Foreground="#4CFF70"
+                                                                   FontSize="9" FontWeight="Bold"
+                                                                   FontFamily="Fonts/#TT Norms"/>
+                                                    </Border>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <Grid Grid.Row="3" Margin="0,16,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Foreground="#888" FontSize="11"
+                           FontFamily="Fonts/#TT Norms" VerticalAlignment="Center"
+                           Text="Losers are renamed, not deleted."/>
+
+                <Button Grid.Column="2" Content="Ignore All" Width="110"
+                        Style="{StaticResource ActionBtn}" Click="BtnIgnore_Click">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bg" Background="#1E1E1E" BorderBrush="#333"
+                                    BorderThickness="1" CornerRadius="6">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                  TextBlock.Foreground="#888888"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bg" Property="Background" Value="#2A2A2A"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <Button Grid.Column="4" x:Name="btnResolve" Width="165"
+                        Content="🔧  Surgically Resolve"
+                        Style="{StaticResource ActionBtn}" Click="BtnResolve_Click">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bg" Background="#C0132A" BorderThickness="0" CornerRadius="6">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                  TextBlock.Foreground="White"
+                                                  TextBlock.FontFamily="Fonts/#TT Norms"
+                                                  TextBlock.FontSize="12" TextBlock.FontWeight="Bold"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bg" Property="Background" Value="#E01535"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Bg" Property="Opacity" Value="0.4"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

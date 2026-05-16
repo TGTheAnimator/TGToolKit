@@ -34,6 +34,9 @@ namespace ToolKitV.Models.Providers
         /// </summary>
         Task CreateBackupAsync(string originalPath);
 
+        /// <summary>Renames/moves a directory from <paramref name="oldPath"/> to <paramref name="newPath"/>.</summary>
+        Task RenameDirectoryAsync(string oldPath, string newPath);
+
         /// <summary>Frees any underlying connection or stream resources.</summary>
         void Disconnect();
     }

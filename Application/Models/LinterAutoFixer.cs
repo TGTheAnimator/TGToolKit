@@ -259,7 +259,102 @@ namespace ToolKitV.Models
             return fixedCount;
         }
 
-        // ─── Helpers ─────────────────────────────────────────────────────────────────
+        // ─── Conflict Resolution ─────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Quarantines "loser" scripts for each conflict category the user resolved.
+        /// Renames the folder to <c>.disabled_{name}</c> (FiveM ignores dot-prefixed dirs)
+        /// and comments out the matching line in server.cfg.
+        /// </summary>
+        public static async Task<int> ResolveConflictsAsync(
+            Providers.IFileSystemProvider fs,
+            string               serverRootPath,
+            Dictionary<string, string> resolvedChoices,   // winner → category title
+            HashSet<string>      allDetectedScripts,
+            LogWriter?           log)
+        {
+            int quarantined = 0;
+            log?.LogWrite("=== Starting Surgical Conflict Resolution ===");
+
+            // ── 1. Identify losers ────────────────────────────────────────────────────
+            var losers = new List<string>();
+            foreach (var cat in ConflictDefinitions.Categories)
+            {
+                string? winner = null;
+                foreach (var kv in resolvedChoices)
+                    if (kv.Value == cat.Title) { winner = kv.Key; break; }
+
+                if (winner == null) continue;
+
+                foreach (var script in cat.MutuallyExclusiveScripts)
+                    if (allDetectedScripts.Contains(script) &&
+                        !script.Equals(winner, StringComparison.OrdinalIgnoreCase))
+                        losers.Add(script);
+            }
+
+            // ── 2. Quarantine folders ────────────────────────────────────────────────
+            var allManifests = await fs.DiscoverFilesAsync(serverRootPath, "fxmanifest.lua");
+
+            foreach (var loser in losers)
+            {
+                foreach (var manifest in allManifests)
+                {
+                    string norm   = manifest.Replace('\\', '/');
+                    string dirPath    = norm[..norm.LastIndexOf('/')];
+                    string folderName = dirPath[(dirPath.LastIndexOf('/') + 1)..];
+
+                    if (!folderName.Equals(loser, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    string parentDir  = dirPath[..dirPath.LastIndexOf('/')];
+                    string newDirPath = parentDir + "/.disabled_" + folderName;
+
+                    try
+                    {
+                        log?.LogWrite($"[QUARANTINE] {folderName} → .disabled_{folderName}");
+                        await fs.RenameDirectoryAsync(dirPath, newDirPath);
+                        quarantined++;
+                    }
+                    catch (Exception ex)
+                    {
+                        log?.LogWrite($"[ERROR] Could not rename {folderName}: {ex.Message}");
+                    }
+                    break;
+                }
+            }
+
+            // ── 3. Comment-disable in server.cfg ────────────────────────────────────
+            string cfgPath = serverRootPath.TrimEnd('/', '\\') +
+                             (serverRootPath.Contains('/') ? "/" : "\\") + "server.cfg";
+            try
+            {
+                string cfgText     = await fs.ReadAllTextAsync(cfgPath);
+                bool   cfgModified = false;
+
+                foreach (var loser in losers)
+                {
+                    string pattern = $@"(?im)^(\s*(?:ensure|start)\s+{Regex.Escape(loser)}\s*)$";
+                    if (Regex.IsMatch(cfgText, pattern))
+                    {
+                        cfgText = Regex.Replace(cfgText, pattern,
+                            $"# [TGToolKit] Quarantined: {loser}\n# $1");
+                        cfgModified = true;
+                    }
+                }
+
+                if (cfgModified)
+                {
+                    await fs.CreateBackupAsync(cfgPath);
+                    await fs.WriteAllTextAsync(cfgPath, cfgText);
+                    log?.LogWrite("[QUARANTINE] Updated server.cfg to disable conflicting scripts.");
+                }
+            }
+            catch { /* server.cfg may be missing or inaccessible */ }
+
+            log?.LogWrite($"=== Conflict Resolution done. {quarantined} script(s) quarantined. ===");
+            return quarantined;
+        }
+
+
 
         private static bool TryInjectConfig(ref string text, string variableName, string newValue)
         {

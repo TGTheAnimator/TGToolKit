@@ -52,6 +52,9 @@ namespace ToolKitV.Models.Providers
             });
         }
 
+        public Task RenameDirectoryAsync(string oldPath, string newPath)
+            => Task.Run(() => Directory.Move(oldPath, newPath));
+
         /// <summary>No-op for local provider — no connection to release.</summary>
         public void Disconnect() { }
     }

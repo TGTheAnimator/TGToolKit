@@ -158,6 +158,72 @@ namespace ToolKitV.Views
                 // Store result so FixAll can act on it
                 _lastResult = result;
 
+                // ── Conflict detection ───────────────────────────────────────────────
+                var detected = new Dictionary<ConflictCategory, List<string>>();
+                foreach (var cat in ConflictDefinitions.Categories)
+                {
+                    var found = new List<string>();
+                    foreach (var script in cat.MutuallyExclusiveScripts)
+                        if (result.InstalledResources.Contains(script))
+                            found.Add(script);
+
+                    if (found.Count >= 2)
+                        detected[cat] = found;
+                }
+
+                if (detected.Count > 0)
+                {
+                    var modal = new ConflictResolverWindow(detected, result.InstalledResources)
+                    {
+                        Owner = Window.GetWindow(this)
+                    };
+
+                    if (modal.ShowDialog() == true && modal.ResolvedChoices.Count > 0)
+                    {
+                        RunLintButton.IsButtonEnabledValue = false;
+                        IFileSystemProvider? fs2 = null;
+                        try
+                        {
+                            var resolveLog = new LogWriter("=== Conflict Resolution ===");
+                            string targetPath = _isSftp ? SftpRootPath.TextValue : _lastScannedDirectory;
+
+                            if (_isSftp)
+                            {
+                                if (!int.TryParse(SftpPort.Value, out int p)) p = 22;
+                                fs2 = new SftpFileSystemProvider(SftpHost.TextValue, p,
+                                    SftpUsername.TextValue, SftpPassword.Password);
+                            }
+                            else
+                            {
+                                fs2 = new LocalFileSystemProvider();
+                            }
+
+                            int q = await LinterAutoFixer.ResolveConflictsAsync(
+                                fs2, targetPath,
+                                modal.ResolvedChoices,
+                                result.InstalledResources,
+                                resolveLog);
+
+                            MessageBox.Show(
+                                $"Conflict Resolution complete: {q} script folder(s) quarantined.\n" +
+                                "Folders renamed to .disabled_* and commented out in server.cfg.\n" +
+                                "Re-run the Linter to confirm a clean state.",
+                                "TGToolKit — Resolved",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
+                        }
+                        catch (Exception rex)
+                        {
+                            MessageBox.Show($"Resolution error:\n{rex.Message}",
+                                "Conflict Resolver", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                        finally
+                        {
+                            fs2?.Disconnect();
+                            RunLintButton.IsButtonEnabledValue = true;
+                        }
+                    }
+                }
+
                 // Reveal Fix All button only in local mode when deprecated manifests were found
                 FixAllButton.Visibility =
                     (!_isSftp && result.DeprecatedManifestPaths.Count > 0)
