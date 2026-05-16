@@ -2,49 +2,59 @@
 
 # 🎨 TGToolKit
 
-**A comprehensive FiveM administrative and development utility kit.**
+**The Ultimate FiveM Administrative and Development Utility Suite.**
 
-*Optimize textures, fix crashes, and consolidate vehicle meta files for a premium, high-performance FiveM experience.*
+*Built on enterprise-grade .NET 8 architecture to optimize textures, fix fatal engine crashes, consolidate resources, and streamline server development.*
 
 </div>
 
 ---
 
+## 🏗️ Enterprise Performance
+TGToolKit isn't just a collection of scripts; it is engineered for massive server environments:
+- **Asynchronous I/O & Bounded Concurrency:** Safely processes gigabytes of server dumps without Large Object Heap (LOH) memory spikes or freezing your UI.
+- **Thread-Safe Pipeline:** Utilizes `Channel<T>` for background logging and `IProgress<T>` for UI synchronization, ensuring perfect stability during heavy batch operations.
+- **Hardware Acceleration:** Native DirectX 11 pipeline for flawless, zero-lag asset rendering.
+
+---
+
 ## ✨ Features
 
-### 🧊 3D Model Viewer (WIP - EXPERIMENTAL)
-> [!WARNING]
-> **This feature is currently in Early Access (Work-In-Progress).**
-> Rendering may be unstable, and some complex shaders or materials might not display correctly yet.
+### 🧊 3D CAD Viewport
+A professional, standalone 3D model viewer—no need to boot up heavy map editors just to inspect a model.
+- **Flawless DirectX 11 Rendering:** Dynamic layout factories and uber-shader permutations automatically handle missing normals, tangents, and untextured props without crashing.
+- **CAD-Style Inspection:** Features an ArcBall camera (smooth orbit, pan, zoom), toggleable wireframe rasterizer states, and a geometric ground grid.
+- **Dynamic Texturing:** Automatically caches `.ytd` texture dictionaries and binds them per-geometry accurately using ShaderMappings.
 
-- **High-Performance Rendering** — Native DirectX 11 hardware acceleration for asset inspection.
-- **YDR & YFT Support** — Preview both static drawable models and complex vehicle fragments.
-- **Dynamic Texturing** — Automatically caches `.ytd` texture dictionaries and binds them per-geometry.
-- **Proportional Orbit & Pan** — Improved camera controls with right-click pan and distance-relative zoom.
-- **Three-Point Lighting** — Enhanced visibility with a professional lighting setup (Key, Fill, and Ambient).
+### ✂️ YTD Splitter (The VRAM Savior)
+- **Mathematical Bin-Packing:** Intelligently reads massive 40MB+ `.ytd` files (common in custom MLOs) and perfectly splits them into safe <=14.5MB chunks.
+- **Auto-TXD Relationships:** Automatically generates the `split_txd_relationships.meta` and `fxmanifest_snippet.lua`. You can split a massive map dictionary and stream it instantly without losing a single texture in-game.
 
-### 🔍 Asset Analyzer (NEW)
-- **Model Analysis Scanner** — Automatically identifies oversized YFT/YDR models that exceed FiveM engine limits.
-- **Stability Guard** — Flag assets likely to cause `georgia-alaska-october` and other vertex-related crashes.
-- **Polygon & Vertex Metrics** — Get detailed reports on geometry complexity before server deployment.
+### 🛡️ Server Linter & Dependency Resolver
+- **Remote SFTP Scanning:** Connect directly to your Pterodactyl/RocketNode server to scan manifests instantly over SFTP without downloading gigabytes of `.ytd` files.
+- **Conflict & Deprecation Traps:** Scans your entire `[resources]` folder to flag deprecated legacy scripts (like `__resource.lua` or `mysql-async`), missing `@ox_lib` dependencies, and overlapping framework systems.
+
+### 🚨 Visual Siren Builder
+- **32-Bit Sequence Grid:** Stop typing raw integer sequences. Use a sleek, modern visual timeline grid to click and draw your emergency light flash patterns.
+- **Instant XML Generation:** Automatically calculates the 32-bit bitmask integers and generates perfect `carcols.meta` XML code ready to copy and paste.
 
 ### 🖼️ Texture Optimizer (v3.0)
-- **Batch process** all `.ytd` files in a folder recursively.
-- 🗜️ **Format Optimization** — Re-encodes to the best block-compressed format:
-  - `BC7` for high-quality RGBA (best for modern FiveM builds).
-  - `BC1` for opaque RGB (reduces size by 50-75%).
-  - `BC5` for normal maps (removes "flat" compression artifacts).
-- 📐 **Smart Downsizing** — Intelligent resolution scaling to stay within the 16MB streaming budget.
-- 📉 **Auto-Downscale 4K** — Automatically shrinks massive 4K+ textures to 2K to prevent VRAM overflows.
+- **The "Rule of 4" Accuracy:** Strictly enforces multiple-of-4 pixel dimensions to completely eliminate the shimmering and diagonal skewing artifacts caused by standard resizers.
+- **Parallel Processing:** Blasts through recursive folders using asynchronous CPU swarming to run `texconv` batches in a fraction of the time.
+- **Smart Compression:** Auto-encodes to the best format (`BC7` for RGBA, `BC1` for opaque, `BC5` for normals) while shrinking massive 4K textures down to safe engine limits.
+
+### 🔍 Asset Analyzer
+- **Model Analysis Scanner:** Automatically identifies oversized YFT/YDR models that exceed the hardcoded 64,000 vertex limit.
+- **Crash Prevention:** Specifically targets assets guaranteed to cause the fatal `georgia-alaska-october` memory crash.
 
 ### 🚗 Vehicle Tools
-- 🔗 **Meta Consolidation** — Merges hundreds of individual `.meta` files into stable master packages.
-- 🛠️ **Conflict Resolution** — Automatically detects and remaps Modkit & Siren ID overlaps.
-- 📝 **FXManifest Generator** — Instant production-ready `fxmanifest.lua` generation.
+- **Meta Consolidation:** Merges hundreds of individual `.meta` files into stable master packages.
+- **Conflict Resolution:** Automatically detects and remaps Modkit & Siren ID overlaps so your police lights and tuning parts never break when merging packs.
+- **FXManifest Generator:** Instant production-ready `fxmanifest.lua` generation.
 
 ### 🔊 Audio Previewer
-- **AWC Native Playback** — Instantly preview GTA V `.awc` audio containers.
-- **Built-in Player** — Seeker bar and volume management powered by NAudio.
+- **AWC Native Playback:** Instantly preview GTA V `.awc` audio containers.
+- **Built-in Player:** Seeker bar and volume management powered by NAudio.
 
 ---
 
@@ -75,6 +85,7 @@
 | [SharpDX](http://sharpdx.org/) | Alexandre Mutel | DirectX 11 API |
 | [NAudio](https://github.com/naudio/NAudio) | Mark Heath | Audio Playback |
 | [DirectXTex](https://github.com/microsoft/DirectXTex) | Microsoft | Texture Processing |
+| [SSH.NET](https://github.com/sshnet/SSH.NET) | renci | Remote Server Linter |
 
 ---
 
@@ -82,4 +93,4 @@
 
 This project is licensed under the **GPL-3.0 License**.
 
-Original work by [Umbrella.re](https://umbrella.re). Fork maintained by **TGTheAnimator** (2026).
+Based on ToolKitV by [Umbrella.re](https://umbrella.re). Completely restructured and maintained by **TGTheAnimator** (2026).
