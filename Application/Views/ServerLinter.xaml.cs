@@ -213,43 +213,72 @@ namespace ToolKitV.Views
         }
         private async void AutoWireButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_lastResult == null || string.IsNullOrWhiteSpace(_lastScannedDirectory))
+            if (_lastResult == null)
             {
-                MessageBox.Show("Run a local scan first.", "Auto-Wire",
+                MessageBox.Show("Run a scan first.", "Auto-Wire",
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
+            // Local mode requires a scanned directory; SFTP uses the configured root path
+            string targetPath = _isSftp ? SftpRootPath.TextValue : _lastScannedDirectory;
+            if (string.IsNullOrWhiteSpace(targetPath))
+            {
+                MessageBox.Show("No target path available. Run a scan first.", "Auto-Wire",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            string modeLabel = _isSftp ? $"SFTP ({SftpHost.TextValue})" : "Local Disk";
+
             var confirm = MessageBox.Show(
-                "TGToolKit will intelligently re-wire configuration files across your entire server:\n\n" +
+                $"TGToolKit will intelligently re-wire configuration files across your server.\n\n" +
+                $"  • Mode: {modeLabel}\n" +
                 $"  • Detected Ecosystem: {_lastResult.InstalledResources.Count} resources\n" +
                 "  • server.cfg convar injection (pma-voice, oxmysql)\n" +
-                "  • Universal config re-routing (Inventory, Target, Phone, Notify)\n" +
-                "  • ox_lib fxmanifest injection for missing declarations\n" +
-                "  • __resource.lua → fxmanifest.lua conversion\n\n" +
-                "⚠️ All modified files will receive a .tg_backup before changes are applied.\n" +
+                "  • Universal config re-routing (Framework, Inventory, Target, Phone, UI)\n" +
+                "  • Qbox-specific native code path activation\n" +
+                "  • ox_lib fxmanifest injection for missing declarations\n\n" +
+                "⚠️ All modified files receive a .tg_backup before changes are applied.\n" +
                 "Continue?",
                 "TGToolKit — Auto-Wire Config",
                 MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
             if (confirm != MessageBoxResult.Yes) return;
 
-            AutoWireButton.IsEnabled     = false;
+            AutoWireButton.IsEnabled           = false;
             RunLintButton.IsButtonEnabledValue = false;
 
+            IFileSystemProvider? fs = null;
             try
             {
-                var log      = new LogWriter("=== User Initiated Auto-Wire ===");
-                int fixes    = await Task.Run(() =>
-                    LinterAutoFixer.ApplySmartFixesAsync(
-                        _lastScannedDirectory,
-                        _lastResult.InstalledResources,
-                        log));
+                var log = new LogWriter("=== User Initiated Auto-Wire ===");
+
+                // Construct the right provider for this mode
+                if (_isSftp)
+                {
+                    if (!int.TryParse(SftpPort.Value, out int port)) port = 22;
+                    fs = new SftpFileSystemProvider(
+                        SftpHost.TextValue,
+                        port,
+                        SftpUsername.TextValue,
+                        SftpPassword.Password);
+                }
+                else
+                {
+                    fs = new LocalFileSystemProvider();
+                }
+
+                int fixes = await LinterAutoFixer.ApplySmartFixesAsync(
+                    fs,
+                    targetPath,
+                    _lastResult.InstalledResources,
+                    log);
 
                 MessageBox.Show(
-                    $"Auto-Wire complete: {fixes} configuration fix(es) applied.\n\n" +
-                    "Backups (.tg_backup) have been created beside every modified file.\n" +
-                    "It is recommended to re-run the Linter to verify the changes.",
+                    $"Auto-Wire complete: {fixes} fix(es) applied via {modeLabel}.\n\n" +
+                    "Backups (.tg_backup) created beside every modified file.\n" +
+                    "Re-run the Linter to verify the changes.",
                     "TGToolKit — Auto-Wire Complete",
                     MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -260,6 +289,7 @@ namespace ToolKitV.Views
             }
             finally
             {
+                fs?.Disconnect();
                 AutoWireButton.IsEnabled           = true;
                 RunLintButton.IsButtonEnabledValue = true;
             }

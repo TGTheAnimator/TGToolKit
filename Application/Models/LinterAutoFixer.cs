@@ -3,53 +3,46 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using ToolKitV.Models.Providers;
 
 namespace ToolKitV.Models
 {
-    /// <summary>
-    /// Intelligent DevOps Auto-Wirer for FiveM server configurations.
-    /// Operates strictly on the local filesystem with an automatic .tg_backup safety net.
-    /// </summary>
     public static class LinterAutoFixer
     {
         // ─── Public API ──────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Fuzzy-logic smart fixer. Detects the server's core ecosystem (inventory, target,
-        /// phone, notifications) and re-routes every script's config files to match.
-        /// Also injects server.cfg convars, wires framework pairs, and upgrades deprecated manifests.
+        /// Fuzzy-logic Auto-Wirer. Works over local disk OR live SFTP (RocketNode)
+        /// depending on which <see cref="IFileSystemProvider"/> is injected.
+        /// All file modifications are preceded by a .tg_backup creation.
         /// </summary>
         public static async Task<int> ApplySmartFixesAsync(
-            string          serverRootPath,
-            HashSet<string> installedResources,
-            LogWriter?      log)
+            IFileSystemProvider fs,
+            string              serverRootPath,
+            HashSet<string>     installedResources,
+            LogWriter?          log)
         {
             int fixesApplied = 0;
-            log?.LogWrite("=== Starting Fuzzy Logic Config Auto-Wirer ===");
+            log?.LogWrite("=== Starting Auto-Wirer (provider-abstracted) ===");
 
-            // ── 1. Determine the server's core ecosystem ─────────────────────────────
-
-            // Framework — Qbox takes priority over legacy QBCore
+            // ── 1. Ecosystem detection ────────────────────────────────────────────────
             string activeFramework = installedResources.Contains("qbx_core")    ? "qbox"       :
                                      installedResources.Contains("qb-core")     ? "qb"         :
                                      installedResources.Contains("es_extended") ? "esx"        : "standalone";
 
-            // Inventory — jpr-inventory sits between qs-inventory and qb in priority
             string activeInventory = installedResources.Contains("ox_inventory")  ? "ox"      :
                                      installedResources.Contains("qs-inventory")  ? "quasar"  :
                                      installedResources.Contains("jpr-inventory") ? "jpr"     :
                                      installedResources.Contains("ps-inventory")  ? "ps"      : "qb";
 
-            string activeTarget    = installedResources.Contains("ox_target")     ? "ox_target"  :
-                                     installedResources.Contains("qb-target")     ? "qb-target"  : "none";
+            string activeTarget    = installedResources.Contains("ox_target")  ? "ox_target" :
+                                     installedResources.Contains("qb-target")  ? "qb-target" : "none";
 
-            // Phone — jpr-phonesystem is the top priority for JPR ecosystems
             string activePhone     = installedResources.Contains("jpr-phonesystem") ? "jpr-phonesystem" :
                                      installedResources.Contains("lb-phone")        ? "lb-phone"        :
                                      installedResources.Contains("qs-smartphone")   ? "qs-smartphone"   :
                                      installedResources.Contains("renewed-phone")   ? "renewed-phone"   : "qb-phone";
 
-            // Notifications/UI — lation_ui is prioritised for Lation-ecosystem servers
             string activeNotify    = installedResources.Contains("lation_ui")    ? "lation"  :
                                      installedResources.Contains("okokNotify")   ? "okok"    :
                                      installedResources.Contains("mythic_notify")? "mythic"  :
@@ -57,99 +50,77 @@ namespace ToolKitV.Models
 
             log?.LogWrite($"[ECOSYSTEM] Framework={activeFramework} | Inventory={activeInventory} | Target={activeTarget} | Phone={activePhone} | UI={activeNotify}");
 
-            // ── 2. server.cfg convar injections ──────────────────────────────────────
-            string serverCfgPath = Path.Combine(serverRootPath, "server.cfg");
-            if (File.Exists(serverCfgPath))
+            // ── 2. server.cfg convar injections (local only — SFTP path uses remote root) ─
+            string sep           = serverRootPath.Contains('/') ? "/" : "\\";
+            string serverCfgPath = serverRootPath.TrimEnd('/', '\\') + sep + "server.cfg";
+
+            try
             {
-                string cfgText  = await File.ReadAllTextAsync(serverCfgPath);
+                string cfgText  = await fs.ReadAllTextAsync(serverCfgPath);
                 bool cfgChanged = false;
 
-                // pma-voice optimal convars
                 if (installedResources.Contains("pma-voice") && !cfgText.Contains("voice_useNativeAudio"))
                 {
-                    log?.LogWrite("[FIX] Injecting pma-voice optimal convars into server.cfg");
-                    cfgText = "setr voice_useNativeAudio true\n" +
-                              "setr voice_use3dAudio true\n" +
-                              "setr voice_defaultCycle \"GRAVE\"\n\n" + cfgText;
-                    // Comment-disable conflicting mumble-voip
-                    cfgText = Regex.Replace(cfgText,
-                        @"(?m)^(\s*(?:ensure|start)\s+mumble-voip\s*)$",
-                        "# [TGToolKit] Auto-disabled: conflicts with pma-voice\n# $1",
-                        RegexOptions.IgnoreCase);
+                    log?.LogWrite("[FIX] Injecting pma-voice convars into server.cfg");
+                    cfgText = "setr voice_useNativeAudio true\nsetr voice_use3dAudio true\nsetr voice_defaultCycle \"GRAVE\"\n\n" + cfgText;
+                    cfgText = Regex.Replace(cfgText, @"(?m)^(\s*(?:ensure|start)\s+mumble-voip\s*)$",
+                        "# [TGToolKit] Auto-disabled: conflicts with pma-voice\n# $1", RegexOptions.IgnoreCase);
                     cfgChanged = true;
                 }
 
-                // oxmysql connection string placeholder
                 if (installedResources.Contains("oxmysql") && !cfgText.Contains("mysql_connection_string"))
                 {
                     log?.LogWrite("[FIX] Injecting oxmysql connection string template into server.cfg");
-                    cfgText = "# [TGToolKit] Configure your DB credentials below:\n" +
-                              "set mysql_connection_string \"mysql://root:password@localhost/fivem?charset=utf8mb4\"\n\n" + cfgText;
+                    cfgText = "# [TGToolKit] Configure DB credentials:\nset mysql_connection_string \"mysql://root:password@localhost/fivem?charset=utf8mb4\"\n\n" + cfgText;
                     cfgChanged = true;
                 }
 
                 if (cfgChanged)
                 {
-                    BackupFile(serverCfgPath, log);
-                    await File.WriteAllTextAsync(serverCfgPath, cfgText);
+                    await fs.CreateBackupAsync(serverCfgPath);
+                    await fs.WriteAllTextAsync(serverCfgPath, cfgText);
                     fixesApplied++;
                 }
             }
+            catch { /* server.cfg may not exist at this path — not fatal */ }
 
-            // ── 3. Framework pair wiring (qb-core ↔ ox_inventory) ───────────────────
-            if (installedResources.Contains("qb-core") && installedResources.Contains("ox_inventory"))
-            {
-                // Fuzzy search for qb-core's config — it may be in different folder layouts
-                string[] candidatePaths =
-                {
-                    Path.Combine(serverRootPath, "resources", "[qb]",   "qb-core", "shared", "main.lua"),
-                    Path.Combine(serverRootPath, "resources", "[core]", "qb-core", "shared", "main.lua"),
-                    Path.Combine(serverRootPath, "resources", "qb-core", "shared", "main.lua"),
-                };
+            // ── 3. Universal fuzzy config re-routing ─────────────────────────────────
+            var allManifests = await fs.DiscoverFilesAsync(serverRootPath, "fxmanifest.lua");
 
-                foreach (var candidate in candidatePaths)
-                {
-                    if (!File.Exists(candidate)) continue;
-
-                    string qbConfig = await File.ReadAllTextAsync(candidate);
-                    const string pattern = @"(?i)(Config\.Inventory\s*=\s*)(['""])qb\2";
-
-                    if (Regex.IsMatch(qbConfig, pattern))
-                    {
-                        log?.LogWrite($"[FIX] Wiring qb-core → ox_inventory in {candidate}");
-                        BackupFile(candidate, log);
-                        qbConfig = Regex.Replace(qbConfig, pattern, "$1$2ox$2");
-                        await File.WriteAllTextAsync(candidate, qbConfig);
-                        fixesApplied++;
-                    }
-                    break; // Only process the first found path
-                }
-            }
-
-            // ── 4. Universal fuzzy config re-routing across all resources ─────────────
-            var allManifests = Directory.GetFiles(serverRootPath, "fxmanifest.lua", SearchOption.AllDirectories);
             foreach (var manifestPath in allManifests)
             {
-                string resourceDir  = Path.GetDirectoryName(manifestPath)!;
-                string resourceName = Path.GetFileName(resourceDir);
-                var    configFiles  = GetLikelyConfigFiles(resourceDir);
+                // Normalise to forward-slash for safe string ops on both local and remote paths
+                string normalised   = manifestPath.Replace('\\', '/');
+                string resourceDir  = normalised.Substring(0, normalised.LastIndexOf('/'));
+                string resourceName = resourceDir.Substring(resourceDir.LastIndexOf('/') + 1);
 
-                foreach (var cfgPath in configFiles)
+                var allLua = await fs.DiscoverFilesAsync(resourceDir, "*.lua");
+
+                foreach (var luaPath in allLua)
                 {
+                    string lowerPath = luaPath.Replace('\\', '/').ToLowerInvariant();
+                    string lowerName = Path.GetFileName(lowerPath);
+
+                    // Only process files that look like configs
+                    if (!lowerName.Contains("config") &&
+                        !lowerPath.Contains("/config/") &&
+                        !lowerPath.Contains("/shared/"))
+                        continue;
+
                     try
                     {
-                        string luaText  = await File.ReadAllTextAsync(cfgPath);
+                        string luaText  = await fs.ReadAllTextAsync(luaPath);
                         bool   modified = false;
 
-                        // ── Universal Variable Routing ──────────────────────────────
+                        // Universal routing
                         modified |= TryInjectConfig(ref luaText, "Framework",    activeFramework);
-                        modified |= TryInjectConfig(ref luaText, "Core",         activeFramework); // Config.Core variant
+                        modified |= TryInjectConfig(ref luaText, "Core",         activeFramework);
                         modified |= TryInjectConfig(ref luaText, "Inventory",    activeInventory);
                         modified |= TryInjectConfig(ref luaText, "Target",       activeTarget);
                         modified |= TryInjectConfig(ref luaText, "Phone",        activePhone);
                         modified |= TryInjectConfig(ref luaText, "Notify",       activeNotify);
                         modified |= TryInjectConfig(ref luaText, "Notification", activeNotify);
-                        modified |= TryInjectConfig(ref luaText, "UI",           activeNotify); // Config.UI = 'lation'
+                        modified |= TryInjectConfig(ref luaText, "UI",           activeNotify);
 
                         if (installedResources.Contains("oxmysql"))
                         {
@@ -157,9 +128,7 @@ namespace ToolKitV.Models
                             modified |= TryInjectConfig(ref luaText, "Mysql",    "oxmysql");
                         }
 
-                        // ── Qbox-Specific Pass ──────────────────────────────────────
-                        // Modern scripts (JG, Wasabi, XDope) expose a 'qbx' identifier
-                        // that unlocks native Qbox code paths. Apply only when Qbox is confirmed.
+                        // Qbox-specific pass: unlock native code paths in modern scripts
                         if (activeFramework == "qbox")
                         {
                             modified |= TryInjectConfig(ref luaText, "Framework", "qbx");
@@ -168,37 +137,34 @@ namespace ToolKitV.Models
 
                         if (modified)
                         {
-                            BackupFile(cfgPath, log);
-                            await File.WriteAllTextAsync(cfgPath, luaText);
+                            await fs.CreateBackupAsync(luaPath);
+                            await fs.WriteAllTextAsync(luaPath, luaText);
                             fixesApplied++;
-                            log?.LogWrite($"[WIRED] Re-routed settings in {resourceName}/{Path.GetFileName(cfgPath)}");
+                            log?.LogWrite($"[WIRED] {resourceName}/{Path.GetFileName(luaPath)}");
                         }
                     }
-                    catch { /* Skip locked or binary-corrupt files */ }
+                    catch { }
                 }
             }
 
-            // ── 5. ox_lib shared_script injection into fxmanifests that use it ────────
+            // ── 4. ox_lib fxmanifest injection ───────────────────────────────────────
             if (installedResources.Contains("ox_lib"))
             {
                 foreach (var manifestPath in allManifests)
                 {
                     try
                     {
-                        string text = await File.ReadAllTextAsync(manifestPath);
-
-                        // Only inject if the resource uses ox_lib exports but hasn't declared the init script
+                        string text = await fs.ReadAllTextAsync(manifestPath);
                         bool usesOxLib  = text.Contains("lib.print") || text.Contains("lib.registerContext") ||
                                           text.Contains("lib.callback") || text.Contains("lib.notify");
-                        bool alreadySet = text.Contains("@ox_lib");
 
-                        if (usesOxLib && !alreadySet)
+                        if (usesOxLib && !text.Contains("@ox_lib"))
                         {
-                            string resourceName = Path.GetFileName(Path.GetDirectoryName(manifestPath)!);
-                            log?.LogWrite($"[FIX] Injecting missing @ox_lib/init.lua into {resourceName}/fxmanifest.lua");
-                            BackupFile(manifestPath, log);
+                            string rn = Path.GetFileName(Path.GetDirectoryName(manifestPath.Replace('\\', '/'))!);
+                            log?.LogWrite($"[FIX] Injecting @ox_lib/init.lua into {rn}/fxmanifest.lua");
+                            await fs.CreateBackupAsync(manifestPath);
                             text += "\n-- [TGToolKit] Injected missing ox_lib dependency\nshared_script '@ox_lib/init.lua'\n";
-                            await File.WriteAllTextAsync(manifestPath, text);
+                            await fs.WriteAllTextAsync(manifestPath, text);
                             fixesApplied++;
                         }
                     }
@@ -206,42 +172,47 @@ namespace ToolKitV.Models
                 }
             }
 
-            // ── 6. Deprecated __resource.lua → fxmanifest.lua conversion ────────────
-            var deprecatedFiles = Directory.GetFiles(serverRootPath, "__resource.lua", SearchOption.AllDirectories);
-            foreach (var oldManifest in deprecatedFiles)
+            // ── 5. __resource.lua → fxmanifest.lua (local only) ─────────────────────
+            // This step is skipped in SFTP mode because deleting remote files is risky
+            // without a full atomic rename. The Fix All button handles local conversion.
+            if (fs is LocalFileSystemProvider)
             {
-                try
+                var deprecated = await fs.DiscoverFilesAsync(serverRootPath, "__resource.lua");
+                foreach (var oldManifest in deprecated)
                 {
-                    string resourceName = Path.GetFileName(Path.GetDirectoryName(oldManifest)!);
-                    log?.LogWrite($"[FIX] Upgrading __resource.lua → fxmanifest.lua in {resourceName}");
+                    try
+                    {
+                        string dir  = Path.GetDirectoryName(oldManifest)!;
+                        string rn   = Path.GetFileName(dir);
+                        string lua  = await fs.ReadAllTextAsync(oldManifest);
 
-                    string luaText = await File.ReadAllTextAsync(oldManifest);
+                        if (!lua.Contains("fx_version"))
+                            lua = "fx_version 'cerulean'\ngame 'gta5'\n\n" + lua;
 
-                    if (!luaText.Contains("fx_version"))
-                        luaText = "fx_version 'cerulean'\ngame 'gta5'\n\n" + luaText;
+                        lua = Regex.Replace(lua, @"resource_manifest_version\s+'[^']*'\s*\n?", string.Empty);
+                        lua = Regex.Replace(lua, @"server_scripts\s*\{",  "server_scripts {");
+                        lua = Regex.Replace(lua, @"client_scripts\s*\{",  "client_scripts {");
+                        lua = Regex.Replace(lua, @"shared_scripts\s*\{",  "shared_scripts {");
 
-                    luaText = Regex.Replace(luaText, @"resource_manifest_version\s+'[^']*'\s*\n?", string.Empty);
-                    luaText = Regex.Replace(luaText, @"server_scripts\s*\{", "server_scripts {");
-                    luaText = Regex.Replace(luaText, @"client_scripts\s*\{", "client_scripts {");
-                    luaText = Regex.Replace(luaText, @"shared_scripts\s*\{", "shared_scripts {");
+                        string newPath = Path.Combine(dir, "fxmanifest.lua");
+                        if (File.Exists(newPath)) continue;
 
-                    string newPath = Path.Combine(Path.GetDirectoryName(oldManifest)!, "fxmanifest.lua");
-                    if (File.Exists(newPath)) continue; // Don't overwrite if already migrated
-
-                    await File.WriteAllTextAsync(newPath, luaText, System.Text.Encoding.UTF8);
-                    File.Delete(oldManifest);
-                    fixesApplied++;
+                        await fs.WriteAllTextAsync(newPath, lua);
+                        File.Delete(oldManifest);
+                        fixesApplied++;
+                        log?.LogWrite($"[FIX] {rn}: __resource.lua → fxmanifest.lua");
+                    }
+                    catch { }
                 }
-                catch { }
             }
 
-            log?.LogWrite($"=== Auto-Wirer Finished. Applied {fixesApplied} intelligent fix(es). ===");
+            log?.LogWrite($"=== Auto-Wirer done. {fixesApplied} fix(es) applied. ===");
             return fixesApplied;
         }
 
         /// <summary>
-        /// Path-based deprecated manifest converter. Used by the simple "Fix All" button
-        /// when operating on a set of already-identified paths from a previous scan.
+        /// Simple path-based deprecated manifest converter used by the "Fix All" button.
+        /// Operates on local paths from a previous scan result.
         /// </summary>
         public static int FixDeprecatedManifests(ServerLinter.LinterResult results, LogWriter? log)
         {
@@ -253,105 +224,54 @@ namespace ToolKitV.Models
 
                 try
                 {
-                    string directory    = Path.GetDirectoryName(path) ?? string.Empty;
-                    string luaText      = File.ReadAllText(path);
-                    string resourceName = Path.GetFileName(directory);
+                    string dir  = Path.GetDirectoryName(path) ?? string.Empty;
+                    string rn   = Path.GetFileName(dir);
+                    string lua  = File.ReadAllText(path);
 
-                    if (!luaText.Contains("fx_version"))
-                        luaText = $"fx_version 'cerulean'\ngame 'gta5'\n\n" + luaText;
+                    if (!lua.Contains("fx_version"))
+                        lua = $"fx_version 'cerulean'\ngame 'gta5'\n\n" + lua;
 
-                    luaText = Regex.Replace(luaText, @"resource_manifest_version\s+'[^']*'\s*\n?", string.Empty);
-                    luaText = Regex.Replace(luaText, @"server_scripts\s*\{", "server_scripts {");
-                    luaText = Regex.Replace(luaText, @"client_scripts\s*\{", "client_scripts {");
-                    luaText = Regex.Replace(luaText, @"shared_scripts\s*\{", "shared_scripts {");
-                    luaText = Regex.Replace(luaText, @"files\s*\{",          "files {");
+                    lua = Regex.Replace(lua, @"resource_manifest_version\s+'[^']*'\s*\n?", string.Empty);
+                    lua = Regex.Replace(lua, @"server_scripts\s*\{",  "server_scripts {");
+                    lua = Regex.Replace(lua, @"client_scripts\s*\{",  "client_scripts {");
+                    lua = Regex.Replace(lua, @"shared_scripts\s*\{",  "shared_scripts {");
+                    lua = Regex.Replace(lua, @"files\s*\{",           "files {");
 
-                    string newPath = Path.Combine(directory, "fxmanifest.lua");
+                    string newPath = Path.Combine(dir, "fxmanifest.lua");
                     if (File.Exists(newPath))
                     {
-                        log?.LogWrite($"[SKIP] {resourceName}: fxmanifest.lua already exists.");
+                        log?.LogWrite($"[SKIP] {rn}: fxmanifest.lua already exists.");
                         continue;
                     }
 
-                    File.WriteAllText(newPath, luaText, System.Text.Encoding.UTF8);
+                    File.WriteAllText(newPath, lua, System.Text.Encoding.UTF8);
                     File.Delete(path);
                     fixedCount++;
-                    log?.LogWrite($"[FIXED] {resourceName}: __resource.lua → fxmanifest.lua");
+                    log?.LogWrite($"[FIXED] {rn}: __resource.lua → fxmanifest.lua");
                 }
                 catch (Exception ex)
                 {
-                    log?.LogWrite($"[ERROR] Could not fix {path}: {ex.Message}");
+                    log?.LogWrite($"[ERROR] {path}: {ex.Message}");
                 }
             }
 
-            log?.LogWrite($"[AUTO-FIX] Converted {fixedCount}/{results.DeprecatedManifestPaths.Count} deprecated manifest(s).");
+            log?.LogWrite($"[AUTO-FIX] Converted {fixedCount}/{results.DeprecatedManifestPaths.Count} manifest(s).");
             return fixedCount;
         }
 
-        // ─── Private helpers ─────────────────────────────────────────────────────────
+        // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// Hunts for any Lua file that is likely a configuration file:
-        /// name contains "config", or lives inside a /config/ or /shared/ subfolder.
-        /// </summary>
-        private static List<string> GetLikelyConfigFiles(string resourceDir)
-        {
-            var results    = new List<string>();
-            var allLuaFiles = Directory.GetFiles(resourceDir, "*.lua", SearchOption.AllDirectories);
-
-            foreach (var file in allLuaFiles)
-            {
-                string fileName = Path.GetFileName(file).ToLowerInvariant();
-                string filePath = file.Replace('\\', '/').ToLowerInvariant();
-
-                if (fileName.Contains("config") ||
-                    filePath.Contains("/config/") ||
-                    filePath.Contains("/shared/"))
-                {
-                    results.Add(file);
-                }
-            }
-
-            return results;
-        }
-
-        /// <summary>
-        /// Uses Regex to locate a variable like <c>Config.Inventory = 'qb'</c> and replaces
-        /// its value with <paramref name="newValue"/>, preserving the original quote style and spacing.
-        /// Handles <c>Config.</c>, <c>cfg.</c>, and <c>Shared.</c> table prefixes.
-        /// </summary>
         private static bool TryInjectConfig(ref string text, string variableName, string newValue)
         {
-            // Matches: Config.Inventory = "qb" / cfg.target = 'qb-target' / Shared.Notify   =  "okok"
             string pattern = $@"(?i)((?:Config|cfg|shared|Cfg)\.{variableName}\s*=\s*)(['""])(.*?)(['""])";
-
             var match = Regex.Match(text, pattern);
             if (!match.Success) return false;
 
             string oldValue = match.Groups[3].Value;
             if (oldValue.Equals(newValue, StringComparison.OrdinalIgnoreCase)) return false;
 
-            // $1 = prefix+equals, $2 = opening quote, newValue, $4 = closing quote (preserves style)
             text = Regex.Replace(text, pattern, $"$1$2{newValue}$4");
             return true;
-        }
-
-        /// <summary>
-        /// Copies the file to <c>filename.tg_backup</c> before any modification.
-        /// Skips silently if a backup already exists (idempotent).
-        /// </summary>
-        private static void BackupFile(string originalPath, LogWriter? log = null)
-        {
-            try
-            {
-                string backupPath = originalPath + ".tg_backup";
-                if (!File.Exists(backupPath))
-                {
-                    File.Copy(originalPath, backupPath);
-                    log?.LogWrite($"[BACKUP] {Path.GetFileName(originalPath)} → {Path.GetFileName(backupPath)}");
-                }
-            }
-            catch { /* Best-effort — never block a fix due to a backup failure */ }
         }
     }
 }

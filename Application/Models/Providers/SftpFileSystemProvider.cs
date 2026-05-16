@@ -109,7 +109,7 @@ namespace ToolKitV.Models.Providers
             await Task.Run(() =>
             {
                 using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
-                _client.UploadFile(ms, remotePath, overwrite: true);
+                _client.UploadFile(ms, remotePath, true);
             });
         }
 
@@ -135,7 +135,7 @@ namespace ToolKitV.Models.Providers
                     using var ms = new MemoryStream();
                     _client.DownloadFile(originalPath, ms);
                     ms.Position = 0;
-                    _client.UploadFile(ms, backupPath, overwrite: false);
+                    _client.UploadFile(ms, backupPath, false);
                 }
                 catch { /* Best-effort — never block a fix due to backup failure */ }
             });
