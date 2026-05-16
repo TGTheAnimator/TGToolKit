@@ -23,6 +23,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="6"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <local:Button x:Name="RunLintButton"
@@ -114,6 +115,56 @@
                                             </Trigger>
                                             <Trigger Property="IsPressed" Value="True">
                                                 <Setter TargetName="Bg" Property="Background" Value="#50FFB347"/>
+                                            </Trigger>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter TargetName="Bg" Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
+                <!-- Restore Backups button — subdued steel outline, non-competing with primary actions -->
+                <Button x:Name="RestoreBackupsButton"
+                        Grid.Row="5"
+                        Content="↩  Restore Backups"
+                        Click="RestoreBackupsButton_Click"
+                        Cursor="Hand"
+                        Visibility="Collapsed"
+                        FontFamily="Fonts/#TT Norms"
+                        FontSize="11"
+                        FontWeight="SemiBold"
+                        Height="34"
+                        Margin="0,4,0,0"
+                        BorderThickness="0">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bg"
+                                                CornerRadius="8"
+                                                Background="#10AAAAAA"
+                                                BorderBrush="#30AAAAAA"
+                                                BorderThickness="1">
+                                            <TextBlock Text="{TemplateBinding Content}"
+                                                       Foreground="#888888"
+                                                       FontFamily="Fonts/#TT Norms"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bg" Property="Background"  Value="#18AAAAAA"/>
+                                                <Setter TargetName="Bg" Property="BorderBrush" Value="#50AAAAAA"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="Bg" Property="Background" Value="#25AAAAAA"/>
                                             </Trigger>
                                             <Trigger Property="IsEnabled" Value="False">
                                                 <Setter TargetName="Bg" Property="Opacity" Value="0.4"/>

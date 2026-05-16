@@ -451,7 +451,7 @@
                             BorderBrush="#25C0132A" BorderThickness="1"
                             Padding="5 2">
                         <TextBlock x:Name="VersionText"
-                                   Text="v3.2.0"
+                                   Text="v3.4.1"
                                    Foreground="#60C0132A"
                                    FontFamily="Fonts/#TT Norms"
                                    FontSize="9"

@@ -141,6 +141,10 @@ namespace ToolKitV.Models.Providers
             });
         }
 
+        /// <summary>Deletes a remote file. Used to clean up .tg_backup files after successful restore.</summary>
+        public Task DeleteFileAsync(string remotePath)
+            => Task.Run(() => _client.DeleteFile(remotePath));
+
         /// <summary>
         /// Renames a remote directory (or file). SSH.NET uses the same SFTP rename
         /// operation for both — no recursive copy required.

@@ -231,7 +231,9 @@ namespace ToolKitV.Views
                         : Visibility.Collapsed;
 
                 // Auto-Wire is available after any local scan (it analyses the full ecosystem)
-                AutoWireButton.Visibility = !_isSftp ? Visibility.Visible : Visibility.Collapsed;
+                AutoWireButton.Visibility        = !_isSftp ? Visibility.Visible : Visibility.Collapsed;
+                // Restore Backups appears whenever there is a valid target path
+                RestoreBackupsButton.Visibility  = Visibility.Visible;
             }
             catch (Exception ex)
             {
@@ -356,6 +358,75 @@ namespace ToolKitV.Views
             finally
             {
                 fs?.Disconnect();
+                AutoWireButton.IsEnabled           = true;
+                RunLintButton.IsButtonEnabledValue = true;
+            }
+        }
+
+        private async void RestoreBackupsButton_Click(object sender, RoutedEventArgs e)
+        {
+            string targetPath = _isSftp ? SftpRootPath.TextValue : _lastScannedDirectory;
+            if (string.IsNullOrWhiteSpace(targetPath))
+            {
+                MessageBox.Show("No scan path available. Run a scan first.", "Restore Backups",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var confirm = MessageBox.Show(
+                "This will restore ALL .tg_backup files found under the server root,\n" +
+                "reverting every file that was modified by the Auto-Wirer or Conflict Resolver.\n\n" +
+                "Continue?",
+                "TGToolKit — Emergency Rollback",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (confirm != MessageBoxResult.Yes) return;
+
+            RestoreBackupsButton.IsEnabled     = false;
+            AutoWireButton.IsEnabled           = false;
+            RunLintButton.IsButtonEnabledValue = false;
+
+            IFileSystemProvider? fs = null;
+            try
+            {
+                var log = new LogWriter("=== Emergency Rollback ===");
+
+                if (_isSftp)
+                {
+                    if (!int.TryParse(SftpPort.Value, out int p)) p = 22;
+                    fs = new SftpFileSystemProvider(SftpHost.TextValue, p,
+                        SftpUsername.TextValue, SftpPassword.Password);
+                }
+                else
+                {
+                    fs = new LocalFileSystemProvider();
+                }
+
+                int restored = await LinterAutoFixer.RestoreBackupsAsync(fs, targetPath, log);
+
+                if (restored == 0)
+                {
+                    MessageBox.Show("No .tg_backup files found. Nothing to restore.",
+                        "Restore Backups", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show(
+                        $"Rollback complete: {restored} file(s) restored to their original state.\n" +
+                        "Re-run the Linter to verify the server is back to its previous state.",
+                        "TGToolKit — Rollback Complete",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Rollback error:\n{ex.Message}", "Restore Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                fs?.Disconnect();
+                RestoreBackupsButton.IsEnabled     = true;
                 AutoWireButton.IsEnabled           = true;
                 RunLintButton.IsButtonEnabledValue = true;
             }

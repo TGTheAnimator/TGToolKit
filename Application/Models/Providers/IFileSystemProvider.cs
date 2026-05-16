@@ -34,6 +34,9 @@ namespace ToolKitV.Models.Providers
         /// </summary>
         Task CreateBackupAsync(string originalPath);
 
+        /// <summary>Deletes a file at <paramref name="path"/>. Used by rollback to remove .tg_backup files after restore.</summary>
+        Task DeleteFileAsync(string path);
+
         /// <summary>Renames/moves a directory from <paramref name="oldPath"/> to <paramref name="newPath"/>.</summary>
         Task RenameDirectoryAsync(string oldPath, string newPath);
 

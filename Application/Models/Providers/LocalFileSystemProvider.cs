@@ -52,6 +52,9 @@ namespace ToolKitV.Models.Providers
             });
         }
 
+        public Task DeleteFileAsync(string path)
+            => Task.Run(() => File.Delete(path));
+
         public Task RenameDirectoryAsync(string oldPath, string newPath)
             => Task.Run(() => Directory.Move(oldPath, newPath));
 

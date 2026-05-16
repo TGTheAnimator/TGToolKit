@@ -13,6 +13,45 @@ namespace ToolKitV.Models
         // ─── Public API ──────────────────────────────────────────────────────────────
 
         /// <summary>
+        /// Scans <paramref name="rootPath"/> for all <c>.tg_backup</c> files created by the
+        /// Auto-Wirer, Conflict Resolver, or server.cfg fixer. Restores each original file
+        /// from its backup then deletes the <c>.tg_backup</c>. Works over local disk or SFTP.
+        /// </summary>
+        public static async Task<int> RestoreBackupsAsync(
+            IFileSystemProvider fs,
+            string              rootPath,
+            LogWriter?          log)
+        {
+            int restored = 0;
+            log?.LogWrite("=== Emergency Rollback — Restoring .tg_backup files ===");
+
+            var backups = await fs.DiscoverFilesAsync(rootPath, "*.tg_backup");
+
+            foreach (var backupPath in backups)
+            {
+                // Original path = backup minus the ".tg_backup" suffix
+                string originalPath = backupPath[..^".tg_backup".Length];
+                try
+                {
+                    string content = await fs.ReadAllTextAsync(backupPath);
+                    await fs.WriteAllTextAsync(originalPath, content);
+                    await fs.DeleteFileAsync(backupPath);
+                    restored++;
+                    log?.LogWrite($"[RESTORED] {Path.GetFileName(originalPath)}");
+                }
+                catch (Exception ex)
+                {
+                    log?.LogWrite($"[ERROR] Could not restore {Path.GetFileName(originalPath)}: {ex.Message}");
+                }
+            }
+
+            log?.LogWrite($"=== Rollback complete. {restored} file(s) restored. ===");
+            return restored;
+        }
+
+
+
+        /// <summary>
         /// Fuzzy-logic Auto-Wirer. Works over local disk OR live SFTP (RocketNode)
         /// depending on which <see cref="IFileSystemProvider"/> is injected.
         /// All file modifications are preceded by a .tg_backup creation.
