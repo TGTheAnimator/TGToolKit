@@ -10,27 +10,27 @@
         <Button Cursor="Hand"
                 IsEnabled="{Binding IsButtonEnabled}"
                 HorizontalAlignment="Stretch"
-                Click="Button_Click">
+                Click="Button_Click"
+                FocusVisualStyle="{x:Null}">
 
             <Button.Style>
                 <Style TargetType="Button">
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="Button">
-                                <!-- Outer border for rounded corners and border brush -->
                                 <Border x:Name="Root"
                                         Height="42"
                                         CornerRadius="8"
                                         BorderThickness="1"
-                                        BorderBrush="#25C0132A"
+                                        BorderBrush="#35C0132A"
                                         ClipToBounds="True">
                                     <Grid>
                                         <!-- Background gradient -->
                                         <Border x:Name="Bg" CornerRadius="8">
                                             <Border.Background>
                                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                    <GradientStop Color="#25C0132A" Offset="0"/>
-                                                    <GradientStop Color="#15C0132A" Offset="1"/>
+                                                    <GradientStop Color="#28C0132A" Offset="0"/>
+                                                    <GradientStop Color="#18C0132A" Offset="1"/>
                                                 </LinearGradientBrush>
                                             </Border.Background>
                                         </Border>
@@ -41,11 +41,17 @@
                                                 HorizontalAlignment="Left">
                                             <Border.Background>
                                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                    <GradientStop Color="#60C0132A" Offset="0"/>
-                                                    <GradientStop Color="#40C0132A" Offset="1"/>
+                                                    <GradientStop Color="#70C0132A" Offset="0"/>
+                                                    <GradientStop Color="#50C0132A" Offset="0.7"/>
+                                                    <GradientStop Color="#80FF4040" Offset="1"/>
                                                 </LinearGradientBrush>
                                             </Border.Background>
                                         </Border>
+
+                                        <!-- Hover highlight overlay -->
+                                        <Border x:Name="HoverOverlay"
+                                                CornerRadius="8"
+                                                Background="Transparent"/>
 
                                         <!-- Button label -->
                                         <TextBlock x:Name="Label"
@@ -55,29 +61,44 @@
                                                    FontFamily="Fonts/#TT Norms"
                                                    FontSize="13"
                                                    FontWeight="Bold"
-                                                   Foreground="#CCFFFFFF"/>
+                                                   Foreground="#C8FFFFFF"/>
                                     </Grid>
                                 </Border>
 
-                                <!-- Triggers belong on ControlTemplate, targeting named elements -->
                                 <ControlTemplate.Triggers>
                                     <!-- Disabled -->
                                     <DataTrigger Binding="{Binding IsButtonEnabled}" Value="False">
-                                        <Setter TargetName="Bg"    Property="Opacity" Value="0.3"/>
-                                        <Setter TargetName="Label" Property="Foreground" Value="#35FFFFFF"/>
+                                        <Setter TargetName="Bg"    Property="Opacity" Value="0.25"/>
+                                        <Setter TargetName="Label" Property="Foreground" Value="#30FFFFFF"/>
                                     </DataTrigger>
+
                                     <!-- Hover -->
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter TargetName="Bg" Property="Background">
                                             <Setter.Value>
                                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                    <GradientStop Color="#50C0132A" Offset="0"/>
-                                                    <GradientStop Color="#35C0132A" Offset="1"/>
+                                                    <GradientStop Color="#55C0132A" Offset="0"/>
+                                                    <GradientStop Color="#38C0132A" Offset="1"/>
                                                 </LinearGradientBrush>
                                             </Setter.Value>
                                         </Setter>
-                                        <Setter TargetName="Root"  Property="BorderBrush" Value="#60C0132A"/>
-                                        <Setter TargetName="Label" Property="Foreground"  Value="#FFFFFFFF"/>
+                                        <Setter TargetName="Root"         Property="BorderBrush"  Value="#70C0132A"/>
+                                        <Setter TargetName="Label"        Property="Foreground"   Value="#FFFFFFFF"/>
+                                        <Setter TargetName="HoverOverlay" Property="Background"   Value="#08FFFFFF"/>
+                                    </Trigger>
+
+                                    <!-- Pressed -->
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="Bg" Property="Background">
+                                            <Setter.Value>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#70C0132A" Offset="0"/>
+                                                    <GradientStop Color="#50C0132A" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter TargetName="Root" Property="BorderBrush" Value="#90C0132A"/>
+                                        <Setter TargetName="Root" Property="Opacity"     Value="0.92"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>

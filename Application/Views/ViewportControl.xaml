@@ -5,10 +5,11 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800"
+             ClipToBounds="True"
              Loaded="UserControl_Loaded"
              Unloaded="UserControl_Unloaded"
              SizeChanged="UserControl_SizeChanged">
-    <Border Background="#0A0A0C" CornerRadius="12" ClipToBounds="True">
+    <Grid Background="#0A0A0C" ClipToBounds="True">
         <Grid>
             <Image x:Name="ViewportImage" Stretch="Fill" />
 
@@ -25,5 +26,5 @@
                 </StackPanel>
             </Border>
         </Grid>
-    </Border>
+    </Grid>
 </UserControl>

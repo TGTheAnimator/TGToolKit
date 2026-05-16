@@ -61,7 +61,9 @@ namespace ToolKitV
 
         private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            System.IO.File.WriteAllText("crash.log", e.Exception.ToString());
+            string crashLogPath = System.IO.Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory, "crash.log");
+            System.IO.File.WriteAllText(crashLogPath, e.Exception.ToString());
             MessageBox.Show(
                 "An unexpected error occurred:\n\n" + e.Exception.ToString()
                 + "\n\nCheck log.txt in the application folder for details.",

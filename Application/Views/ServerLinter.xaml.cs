@@ -104,14 +104,15 @@ namespace ToolKitV.Views
                 }
                 else
                 {
-                    MessageBox.Show(
-                        "SFTP mode requires SSH.NET. Please ensure the package is installed.\n" +
-                        "For now, use Local mode to scan a downloaded server folder.",
-                        "SFTP Not Available",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
-                    RunLintButton.IsButtonEnabledValue = true;
-                    return;
+                    if (!int.TryParse(SftpPort.Value, out int port)) port = 22;
+
+                    provider = new SftpManifestProvider(
+                        SftpHost.TextValue,
+                        port,
+                        SftpUsername.TextValue,
+                        SftpPassword.Password);
+
+                    rootPath = SftpRootPath.TextValue;
                 }
 
                 var progress = new Progress<int>();

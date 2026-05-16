@@ -5,428 +5,478 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:ToolKitV.Views"
              mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <!-- Hover glow style applied to every nav Border -->
+        <Style x:Key="NavItem" TargetType="Border">
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Margin" Value="0 2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#0DC0132A"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Section label style -->
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#35FFFFFF"/>
+            <Setter Property="FontFamily" Value="Fonts/#TT Norms"/>
+            <Setter Property="FontSize"   Value="9"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin"     Value="14 14 0 6"/>
+        </Style>
+    </UserControl.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Section label -->
-        <TextBlock Grid.Row="0"
-                   Text="TOOLS"
-                   Foreground="#40FFFFFF"
-                   FontFamily="Fonts/#TT Norms"
-                   FontSize="10"
-                   FontWeight="Bold"
-                   Margin="16 20 0 12"/>
+        <!-- ─── Nav items ─── -->
+        <ScrollViewer Grid.Row="0"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="10 8 10 0">
+            <StackPanel>
 
-        <!-- Nav items -->
-        <StackPanel Grid.Row="1" Margin="10 0">
+                <!-- ══ SECTION: CORE TOOLS ══ -->
+                <TextBlock Style="{StaticResource SectionLabel}" Text="CORE TOOLS"/>
 
-            <!-- Texture Optimizer -->
-            <Border x:Name="TextureOptimizerItem"
-                    Height="46" CornerRadius="8" Margin="0 2"
-                    Cursor="Hand"
-                    MouseLeftButtonDown="TextureOptimizer_Click">
-                <Grid>
-                    <!-- Active gradient bg (visible when selected) -->
-                    <Border x:Name="TextureOptimizerBg" CornerRadius="8">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#30C0132A" Offset="0"/>
-                                <GradientStop Color="#15C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-                    <!-- Inactive bg (visible when not selected) -->
-                    <Border x:Name="TextureOptimizerInactiveBg" CornerRadius="8"
-                            Background="#10FFFFFF" Visibility="Collapsed"/>
+                <!-- Texture Optimizer -->
+                <Border x:Name="TextureOptimizerItem" Style="{StaticResource NavItem}"
+                        MouseLeftButtonDown="TextureOptimizer_Click">
+                    <Grid>
+                        <Border x:Name="TextureOptimizerBg" CornerRadius="8">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#32C0132A" Offset="0"/>
+                                    <GradientStop Color="#18C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border x:Name="TextureOptimizerInactiveBg" CornerRadius="8"
+                                Background="Transparent" Visibility="Collapsed"/>
+                        <Rectangle x:Name="TextureOptimizerStripe"
+                                   Width="3" HorizontalAlignment="Left" RadiusX="2" RadiusY="2">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#FF4040" Offset="0"/>
+                                    <GradientStop Color="#C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                            <Rectangle.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="0"
+                                                  Color="#C0132A" Opacity="0.8"/>
+                            </Rectangle.Effect>
+                        </Rectangle>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14 0 0 0">
+                            <Border Width="22" Height="22" CornerRadius="5" Background="#25C0132A"
+                                    VerticalAlignment="Center" Margin="0 0 10 0">
+                                <TextBlock Text="&#xE8B9;" FontFamily="Segoe MDL2 Assets" Foreground="#FF6060" FontSize="10"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="TextureOptimizerLabel"
+                                       Text="Texture Optimizer"
+                                       Foreground="#FFFFFFFF"
+                                       FontFamily="Fonts/#TT Norms"
+                                       FontSize="12"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
 
-                    <!-- Left accent stripe (active only) -->
-                    <Rectangle x:Name="TextureOptimizerStripe"
-                               Width="3" HorizontalAlignment="Left" RadiusX="2" RadiusY="2">
-                        <Rectangle.Fill>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#FF5555" Offset="0"/>
-                                <GradientStop Color="#C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Rectangle.Fill>
-                    </Rectangle>
+                <!-- Vehicle Tools -->
+                <Border x:Name="VehiclesItem" Style="{StaticResource NavItem}"
+                        MouseLeftButtonDown="Vehicles_Click">
+                    <Grid>
+                        <Border x:Name="VehiclesBg" CornerRadius="8" Visibility="Collapsed">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#32C0132A" Offset="0"/>
+                                    <GradientStop Color="#18C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border x:Name="VehiclesInactiveBg" CornerRadius="8" Background="Transparent"/>
+                        <Rectangle x:Name="VehiclesStripe" Width="3" HorizontalAlignment="Left"
+                                   RadiusX="2" RadiusY="2" Visibility="Collapsed">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#FF4040" Offset="0"/>
+                                    <GradientStop Color="#C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                            <Rectangle.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#C0132A" Opacity="0.8"/>
+                            </Rectangle.Effect>
+                        </Rectangle>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14 0 0 0">
+                            <Border Width="22" Height="22" CornerRadius="5" Background="#18FFFFFF"
+                                    VerticalAlignment="Center" Margin="0 0 10 0">
+                                <TextBlock Text="&#xE804;" FontFamily="Segoe MDL2 Assets" Foreground="#FFA0A0" FontSize="11"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="VehiclesLabel" Text="Vehicle Tools"
+                                       Foreground="#A0FFFFFF" FontFamily="Fonts/#TT Norms"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
 
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14 0 0 0">
-                        <TextBlock Text="🖼" FontSize="14" VerticalAlignment="Center" Margin="0 0 10 0"/>
-                        <TextBlock x:Name="TextureOptimizerLabel"
-                                   Text="Texture Optimizer"
-                                   Foreground="#FFFFFFFF"
+                <!-- Asset Analyzer -->
+                <Border x:Name="AssetAnalyzerItem" Style="{StaticResource NavItem}"
+                        MouseLeftButtonDown="AssetAnalyzer_Click">
+                    <Grid>
+                        <Border x:Name="AssetAnalyzerBg" CornerRadius="8" Visibility="Collapsed">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#32C0132A" Offset="0"/>
+                                    <GradientStop Color="#18C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border x:Name="AssetAnalyzerInactiveBg" CornerRadius="8" Background="Transparent"/>
+                        <Rectangle x:Name="AssetAnalyzerStripe" Width="3" HorizontalAlignment="Left"
+                                   RadiusX="2" RadiusY="2" Visibility="Collapsed">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#FF4040" Offset="0"/>
+                                    <GradientStop Color="#C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                            <Rectangle.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#C0132A" Opacity="0.8"/>
+                            </Rectangle.Effect>
+                        </Rectangle>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14 0 0 0">
+                            <Border Width="22" Height="22" CornerRadius="5" Background="#18FFFFFF"
+                                    VerticalAlignment="Center" Margin="0 0 10 0">
+                                <TextBlock Text="&#xE9D2;" FontFamily="Segoe MDL2 Assets" Foreground="#FFA0A0" FontSize="11"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="AssetAnalyzerLabel" Text="Asset Analyzer"
+                                       Foreground="#A0FFFFFF" FontFamily="Fonts/#TT Norms"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Model Viewer -->
+                <Border x:Name="ModelViewerItem" Style="{StaticResource NavItem}"
+                        MouseLeftButtonDown="ModelViewer_Click">
+                    <Grid>
+                        <Border x:Name="ModelViewerBg" CornerRadius="8" Visibility="Collapsed">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#32C0132A" Offset="0"/>
+                                    <GradientStop Color="#18C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border x:Name="ModelViewerInactiveBg" CornerRadius="8" Background="Transparent"/>
+                        <Rectangle x:Name="ModelViewerStripe" Width="3" HorizontalAlignment="Left"
+                                   RadiusX="2" RadiusY="2" Visibility="Collapsed">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#FF4040" Offset="0"/>
+                                    <GradientStop Color="#C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                            <Rectangle.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#C0132A" Opacity="0.8"/>
+                            </Rectangle.Effect>
+                        </Rectangle>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14 0 0 0">
+                            <Border Width="22" Height="22" CornerRadius="5" Background="#18FFFFFF"
+                                    VerticalAlignment="Center" Margin="0 0 10 0">
+                                <TextBlock Text="&#xE92E;" FontFamily="Segoe MDL2 Assets" Foreground="#FFA0A0" FontSize="11"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="ModelViewerLabel" Text="3D Model Viewer"
+                                       Foreground="#A0FFFFFF" FontFamily="Fonts/#TT Norms"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ══ SECTION: AUDIO & CLOTHING ══ -->
+                <Rectangle Height="1" Margin="4 8 4 0" Opacity="0.12">
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#FFFFFF" Offset="0"/>
+                            <GradientStop Color="#00FFFFFF" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+                <TextBlock Style="{StaticResource SectionLabel}" Text="CONTENT"/>
+
+                <!-- Audio Preview -->
+                <Border x:Name="AudioViewerItem" Style="{StaticResource NavItem}"
+                        MouseLeftButtonDown="AudioViewer_Click">
+                    <Grid>
+                        <Border x:Name="AudioViewerActiveBg" CornerRadius="8" Visibility="Collapsed">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#32C0132A" Offset="0"/>
+                                    <GradientStop Color="#18C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border x:Name="AudioViewerInactiveBg" CornerRadius="8" Background="Transparent"/>
+                        <Rectangle x:Name="AudioViewerStripe" Width="3" HorizontalAlignment="Left"
+                                   RadiusX="2" RadiusY="2" Visibility="Collapsed">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#FF4040" Offset="0"/>
+                                    <GradientStop Color="#C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                            <Rectangle.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#C0132A" Opacity="0.8"/>
+                            </Rectangle.Effect>
+                        </Rectangle>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14 0 0 0">
+                            <Border Width="22" Height="22" CornerRadius="5" Background="#18FFFFFF"
+                                    VerticalAlignment="Center" Margin="0 0 10 0">
+                                <TextBlock Text="&#xE767;" FontFamily="Segoe MDL2 Assets" Foreground="#FFA0A0" FontSize="11"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="AudioViewerLabel" Text="Audio Preview"
+                                       Foreground="#A0FFFFFF" FontFamily="Fonts/#TT Norms"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Clothing Tools -->
+                <Border x:Name="ClothingToolsItem" Style="{StaticResource NavItem}"
+                        MouseLeftButtonDown="ClothingTools_Click">
+                    <Grid>
+                        <Border x:Name="ClothingToolsBg" CornerRadius="8" Visibility="Collapsed">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#32C0132A" Offset="0"/>
+                                    <GradientStop Color="#18C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border x:Name="ClothingToolsInactiveBg" CornerRadius="8" Background="Transparent"/>
+                        <Rectangle x:Name="ClothingToolsStripe" Width="3" HorizontalAlignment="Left"
+                                   RadiusX="2" RadiusY="2" Visibility="Collapsed">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#FF4040" Offset="0"/>
+                                    <GradientStop Color="#C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                            <Rectangle.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#C0132A" Opacity="0.8"/>
+                            </Rectangle.Effect>
+                        </Rectangle>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14 0 0 0">
+                            <Border Width="22" Height="22" CornerRadius="5" Background="#18FFFFFF"
+                                    VerticalAlignment="Center" Margin="0 0 10 0">
+                                <TextBlock Text="&#xE71A;" FontFamily="Segoe MDL2 Assets" Foreground="#FFA0A0" FontSize="11"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="ClothingToolsLabel" Text="Clothing Tools"
+                                       Foreground="#A0FFFFFF" FontFamily="Fonts/#TT Norms"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ══ SECTION: ADVANCED ══ -->
+                <Rectangle Height="1" Margin="4 8 4 0" Opacity="0.12">
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#FFFFFF" Offset="0"/>
+                            <GradientStop Color="#00FFFFFF" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+                <TextBlock Style="{StaticResource SectionLabel}" Text="ADVANCED"/>
+
+                <!-- YTD Splitter -->
+                <Border x:Name="YtdSplitterItem" Style="{StaticResource NavItem}"
+                        MouseLeftButtonDown="YtdSplitter_Click">
+                    <Grid>
+                        <Border x:Name="YtdSplitterBg" CornerRadius="8" Visibility="Collapsed">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#32C0132A" Offset="0"/>
+                                    <GradientStop Color="#18C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border x:Name="YtdSplitterInactiveBg" CornerRadius="8" Background="Transparent"/>
+                        <Rectangle x:Name="YtdSplitterStripe" Width="3" HorizontalAlignment="Left"
+                                   RadiusX="2" RadiusY="2" Visibility="Collapsed">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#FF4040" Offset="0"/>
+                                    <GradientStop Color="#C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                            <Rectangle.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#C0132A" Opacity="0.8"/>
+                            </Rectangle.Effect>
+                        </Rectangle>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14 0 0 0">
+                            <Border Width="22" Height="22" CornerRadius="5" Background="#18FFFFFF"
+                                    VerticalAlignment="Center" Margin="0 0 10 0">
+                                <TextBlock Text="&#xE8C6;" FontFamily="Segoe MDL2 Assets" Foreground="#FFA0A0" FontSize="11"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="YtdSplitterLabel" Text="YTD Splitter"
+                                       Foreground="#A0FFFFFF" FontFamily="Fonts/#TT Norms"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Server Linter -->
+                <Border x:Name="ServerLinterItem" Style="{StaticResource NavItem}"
+                        MouseLeftButtonDown="ServerLinter_Click">
+                    <Grid>
+                        <Border x:Name="ServerLinterBg" CornerRadius="8" Visibility="Collapsed">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#32C0132A" Offset="0"/>
+                                    <GradientStop Color="#18C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border x:Name="ServerLinterInactiveBg" CornerRadius="8" Background="Transparent"/>
+                        <Rectangle x:Name="ServerLinterStripe" Width="3" HorizontalAlignment="Left"
+                                   RadiusX="2" RadiusY="2" Visibility="Collapsed">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#FF4040" Offset="0"/>
+                                    <GradientStop Color="#C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                            <Rectangle.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#C0132A" Opacity="0.8"/>
+                            </Rectangle.Effect>
+                        </Rectangle>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14 0 0 0">
+                            <Border Width="22" Height="22" CornerRadius="5" Background="#18FFFFFF"
+                                    VerticalAlignment="Center" Margin="0 0 10 0">
+                                <TextBlock Text="&#xF6FA;" FontFamily="Segoe MDL2 Assets" Foreground="#FFA0A0" FontSize="11"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="ServerLinterLabel" Text="Server Linter"
+                                       Foreground="#A0FFFFFF" FontFamily="Fonts/#TT Norms"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Siren Builder -->
+                <Border x:Name="SirenBuilderItem" Style="{StaticResource NavItem}"
+                        MouseLeftButtonDown="SirenBuilder_Click">
+                    <Grid>
+                        <Border x:Name="SirenBuilderBg" CornerRadius="8" Visibility="Collapsed">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#32C0132A" Offset="0"/>
+                                    <GradientStop Color="#18C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border x:Name="SirenBuilderInactiveBg" CornerRadius="8" Background="Transparent"/>
+                        <Rectangle x:Name="SirenBuilderStripe" Width="3" HorizontalAlignment="Left"
+                                   RadiusX="2" RadiusY="2" Visibility="Collapsed">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#FF4040" Offset="0"/>
+                                    <GradientStop Color="#C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                            <Rectangle.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#C0132A" Opacity="0.8"/>
+                            </Rectangle.Effect>
+                        </Rectangle>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14 0 0 0">
+                            <Border Width="22" Height="22" CornerRadius="5" Background="#18FFFFFF"
+                                    VerticalAlignment="Center" Margin="0 0 10 0">
+                                <TextBlock Text="&#xE965;" FontFamily="Segoe MDL2 Assets" Foreground="#FFA0A0" FontSize="11"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="SirenBuilderLabel" Text="Siren Builder"
+                                       Foreground="#A0FFFFFF" FontFamily="Fonts/#TT Norms"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ─── Footer ─── -->
+        <Border Grid.Row="1" BorderThickness="0 1 0 0" BorderBrush="#10FFFFFF" Padding="14 12">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Author name with red accent dot -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0 0 0 2">
+                    <Ellipse Width="6" Height="6" Fill="#C0132A"
+                             VerticalAlignment="Center" Margin="0 0 6 0">
+                        <Ellipse.Effect>
+                            <DropShadowEffect BlurRadius="5" ShadowDepth="0"
+                                              Color="#C0132A" Opacity="0.8"/>
+                        </Ellipse.Effect>
+                    </Ellipse>
+                    <TextBlock Text="TGTheAnimator"
+                               Foreground="#50FFFFFF"
+                               FontFamily="Fonts/#TT Norms"
+                               FontSize="10"
+                               FontWeight="Bold"/>
+                </StackPanel>
+
+                <!-- Version badge -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0 2 0 0">
+                    <Border CornerRadius="3" Background="#18C0132A"
+                            BorderBrush="#25C0132A" BorderThickness="1"
+                            Padding="5 2">
+                        <TextBlock x:Name="VersionText"
+                                   Text="v3.2.0"
+                                   Foreground="#60C0132A"
                                    FontFamily="Fonts/#TT Norms"
-                                   FontSize="13"
-                                   FontWeight="Bold"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- Vehicles -->
-            <Border x:Name="VehiclesItem"
-                    Height="46" CornerRadius="8" Margin="0 2"
-                    Cursor="Hand"
-                    MouseLeftButtonDown="Vehicles_Click">
-                <Grid>
-                    <!-- Active gradient bg -->
-                    <Border x:Name="VehiclesBg" CornerRadius="8" Visibility="Collapsed">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#30C0132A" Offset="0"/>
-                                <GradientStop Color="#15C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
+                                   FontSize="9"
+                                   FontWeight="Bold"/>
                     </Border>
-                    <!-- Inactive bg -->
-                    <Border x:Name="VehiclesInactiveBg" CornerRadius="8" Background="#10FFFFFF"/>
+                </StackPanel>
 
-                    <!-- Left accent stripe (hidden when inactive) -->
-                    <Rectangle x:Name="VehiclesStripe"
-                               Width="3" HorizontalAlignment="Left" RadiusX="2" RadiusY="2"
-                               Visibility="Collapsed">
-                        <Rectangle.Fill>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#FF5555" Offset="0"/>
-                                <GradientStop Color="#C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Rectangle.Fill>
-                    </Rectangle>
-
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="17 0 0 0">
-                        <TextBlock Text="🚗" FontSize="14" VerticalAlignment="Center" Margin="0 0 10 0"/>
-                        <TextBlock x:Name="VehiclesLabel"
-                                   Text="Vehicle Tools"
-                                   Foreground="#B0FFFFFF"
-                                   FontFamily="Fonts/#TT Norms"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- Asset Analyzer -->
-            <Border x:Name="AssetAnalyzerItem"
-                    Height="46" CornerRadius="8" Margin="0 2"
-                    Cursor="Hand"
-                    MouseLeftButtonDown="AssetAnalyzer_Click">
-                <Grid>
-                    <!-- Active gradient bg -->
-                    <Border x:Name="AssetAnalyzerBg" CornerRadius="8" Visibility="Collapsed">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#30C0132A" Offset="0"/>
-                                <GradientStop Color="#15C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-                    <!-- Inactive bg -->
-                    <Border x:Name="AssetAnalyzerInactiveBg" CornerRadius="8" Background="#10FFFFFF"/>
-
-                    <!-- Left accent stripe (hidden when inactive) -->
-                    <Rectangle x:Name="AssetAnalyzerStripe"
-                               Width="3" HorizontalAlignment="Left" RadiusX="2" RadiusY="2"
-                               Visibility="Collapsed">
-                        <Rectangle.Fill>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#FF5555" Offset="0"/>
-                                <GradientStop Color="#C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Rectangle.Fill>
-                    </Rectangle>
-
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="17 0 0 0">
-                        <TextBlock Text="📊" FontSize="14" VerticalAlignment="Center" Margin="0 0 10 0"/>
-                        <TextBlock x:Name="AssetAnalyzerLabel"
-                                   Text="Asset Analyzer"
-                                   Foreground="#B0FFFFFF"
-                                   FontFamily="Fonts/#TT Norms"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- Model Viewer -->
-            <Border x:Name="ModelViewerItem"
-                    Height="46" CornerRadius="8" Margin="0 2"
-                    Cursor="Hand"
-                    MouseLeftButtonDown="ModelViewer_Click">
-                <Grid>
-                    <!-- Active gradient bg -->
-                    <Border x:Name="ModelViewerBg" CornerRadius="8" Visibility="Collapsed">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#30C0132A" Offset="0"/>
-                                <GradientStop Color="#15C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-                    <!-- Inactive bg -->
-                    <Border x:Name="ModelViewerInactiveBg" CornerRadius="8" Background="#10FFFFFF"/>
-
-                    <!-- Left accent stripe (hidden when inactive) -->
-                    <Rectangle x:Name="ModelViewerStripe"
-                               Width="3" HorizontalAlignment="Left" RadiusX="2" RadiusY="2"
-                               Visibility="Collapsed">
-                        <Rectangle.Fill>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#FF5555" Offset="0"/>
-                                <GradientStop Color="#C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Rectangle.Fill>
-                    </Rectangle>
-
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="17 0 0 0">
-                        <TextBlock Text="🎲" FontSize="14" VerticalAlignment="Center" Margin="0 0 10 0"/>
-                        <TextBlock x:Name="ModelViewerLabel"
-                                   Text="3D Model Viewer"
-                                   Foreground="#B0FFFFFF"
-                                   FontFamily="Fonts/#TT Norms"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- Audio Preview -->
-            <Border x:Name="AudioViewerItem"
-                    Height="46" CornerRadius="8" Margin="0 2"
-                    Cursor="Hand"
-                    MouseLeftButtonDown="AudioViewer_Click">
-                <Grid>
-                    <!-- Active gradient bg -->
-                    <Border x:Name="AudioViewerActiveBg" CornerRadius="8" Visibility="Collapsed">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#30C0132A" Offset="0"/>
-                                <GradientStop Color="#15C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-                    <!-- Inactive bg -->
-                    <Border x:Name="AudioViewerInactiveBg" CornerRadius="8" Background="#10FFFFFF"/>
-
-                    <!-- Left accent stripe (hidden when inactive) -->
-                    <Rectangle x:Name="AudioViewerStripe"
-                               Width="3" HorizontalAlignment="Left" RadiusX="2" RadiusY="2"
-                               Visibility="Collapsed">
-                        <Rectangle.Fill>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#FF5555" Offset="0"/>
-                                <GradientStop Color="#C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Rectangle.Fill>
-                    </Rectangle>
-
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="17 0 0 0">
-                        <TextBlock Text="🔊" FontSize="14" VerticalAlignment="Center" Margin="0 0 10 0"/>
-                        <TextBlock x:Name="AudioViewerLabel"
-                                   Text="Audio Preview"
-                                   Foreground="#B0FFFFFF"
-                                   FontFamily="Fonts/#TT Norms"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- Clothing Tools -->
-            <Border x:Name="ClothingToolsItem"
-                    Height="46" CornerRadius="8" Margin="0 2"
-                    Cursor="Hand"
-                    MouseLeftButtonDown="ClothingTools_Click">
-                <Grid>
-                    <!-- Active gradient bg -->
-                    <Border x:Name="ClothingToolsBg" CornerRadius="8" Visibility="Collapsed">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#30C0132A" Offset="0"/>
-                                <GradientStop Color="#15C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-                    <!-- Inactive bg -->
-                    <Border x:Name="ClothingToolsInactiveBg" CornerRadius="8" Background="#10FFFFFF"/>
-
-                    <!-- Left accent stripe (hidden when inactive) -->
-                    <Rectangle x:Name="ClothingToolsStripe"
-                               Width="3" HorizontalAlignment="Left" RadiusX="2" RadiusY="2"
-                               Visibility="Collapsed">
-                        <Rectangle.Fill>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#FF5555" Offset="0"/>
-                                <GradientStop Color="#C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Rectangle.Fill>
-                    </Rectangle>
-
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="17 0 0 0">
-                        <TextBlock Text="👕" FontSize="14" VerticalAlignment="Center" Margin="0 0 10 0"/>
-                        <TextBlock x:Name="ClothingToolsLabel"
-                                   Text="Clothing Tools"
-                                   Foreground="#B0FFFFFF"
-                                   FontFamily="Fonts/#TT Norms"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- YTD Splitter -->
-            <Border x:Name="YtdSplitterItem"
-                    Height="46" CornerRadius="8" Margin="0 2"
-                    Cursor="Hand"
-                    MouseLeftButtonDown="YtdSplitter_Click">
-                <Grid>
-                    <!-- Active gradient bg -->
-                    <Border x:Name="YtdSplitterBg" CornerRadius="8" Visibility="Collapsed">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#30C0132A" Offset="0"/>
-                                <GradientStop Color="#15C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-                    <!-- Inactive bg -->
-                    <Border x:Name="YtdSplitterInactiveBg" CornerRadius="8" Background="#10FFFFFF"/>
-
-                    <!-- Left accent stripe -->
-                    <Rectangle x:Name="YtdSplitterStripe"
-                               Width="3" HorizontalAlignment="Left" RadiusX="2" RadiusY="2"
-                               Visibility="Collapsed">
-                        <Rectangle.Fill>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#FF5555" Offset="0"/>
-                                <GradientStop Color="#C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Rectangle.Fill>
-                    </Rectangle>
-
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="17 0 0 0">
-                        <TextBlock Text="✂️" FontSize="14" VerticalAlignment="Center" Margin="0 0 10 0"/>
-                        <TextBlock x:Name="YtdSplitterLabel"
-                                   Text="YTD Splitter"
-                                   Foreground="#B0FFFFFF"
-                                   FontFamily="Fonts/#TT Norms"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- Server Linter -->
-            <Border x:Name="ServerLinterItem"
-                    Height="46" CornerRadius="8" Margin="0 2"
-                    Cursor="Hand"
-                    MouseLeftButtonDown="ServerLinter_Click">
-                <Grid>
-                    <!-- Active gradient bg -->
-                    <Border x:Name="ServerLinterBg" CornerRadius="8" Visibility="Collapsed">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#30C0132A" Offset="0"/>
-                                <GradientStop Color="#15C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-                    <!-- Inactive bg -->
-                    <Border x:Name="ServerLinterInactiveBg" CornerRadius="8" Background="#10FFFFFF"/>
-
-                    <!-- Left accent stripe -->
-                    <Rectangle x:Name="ServerLinterStripe"
-                               Width="3" HorizontalAlignment="Left" RadiusX="2" RadiusY="2"
-                               Visibility="Collapsed">
-                        <Rectangle.Fill>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#FF5555" Offset="0"/>
-                                <GradientStop Color="#C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Rectangle.Fill>
-                    </Rectangle>
-
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="17 0 0 0">
-                        <TextBlock Text="🔎" FontSize="14" VerticalAlignment="Center" Margin="0 0 10 0"/>
-                        <TextBlock x:Name="ServerLinterLabel"
-                                   Text="Server Linter"
-                                   Foreground="#B0FFFFFF"
-                                   FontFamily="Fonts/#TT Norms"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- Siren Builder -->
-            <Border x:Name="SirenBuilderItem"
-                    Height="46" CornerRadius="8" Margin="0 2"
-                    Cursor="Hand"
-                    MouseLeftButtonDown="SirenBuilder_Click">
-                <Grid>
-                    <!-- Active gradient bg -->
-                    <Border x:Name="SirenBuilderBg" CornerRadius="8" Visibility="Collapsed">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#30C0132A" Offset="0"/>
-                                <GradientStop Color="#15C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-                    <!-- Inactive bg -->
-                    <Border x:Name="SirenBuilderInactiveBg" CornerRadius="8" Background="#10FFFFFF"/>
-
-                    <!-- Left accent stripe -->
-                    <Rectangle x:Name="SirenBuilderStripe"
-                               Width="3" HorizontalAlignment="Left" RadiusX="2" RadiusY="2"
-                               Visibility="Collapsed">
-                        <Rectangle.Fill>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#FF5555" Offset="0"/>
-                                <GradientStop Color="#C0132A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Rectangle.Fill>
-                    </Rectangle>
-
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="17 0 0 0">
-                        <TextBlock Text="🚔" FontSize="14" VerticalAlignment="Center" Margin="0 0 10 0"/>
-                        <TextBlock x:Name="SirenBuilderLabel"
-                                   Text="Siren Builder"
-                                   Foreground="#B0FFFFFF"
-                                   FontFamily="Fonts/#TT Norms"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-        </StackPanel>
-
-        <!-- Footer -->
-        <StackPanel Grid.Row="2" Margin="16 0 0 16">
-            <TextBlock Text="TGTheAnimator"
-                       Foreground="#40FFFFFF"
-                       FontFamily="Fonts/#TT Norms"
-                       FontSize="10"
-                       FontWeight="Bold"/>
-            <TextBlock x:Name="VersionText"
-                       Text="v3.1.0"
-                       Foreground="#25FFFFFF"
-                       FontFamily="Fonts/#TT Norms"
-                       FontSize="9"/>
-            <TextBlock x:Name="UpdateBanner"
-                       Text="• UPDATE AVAILABLE"
-                       Foreground="#4CFF70"
-                       FontFamily="Fonts/#TT Norms"
-                       FontSize="12"
-                       FontWeight="Bold"
-                       Margin="0 2 0 0"
-                       Cursor="Hand"
-                       Visibility="Collapsed"
-                       MouseLeftButtonDown="UpdateBanner_Click"/>
-        </StackPanel>
+                <!-- Update banner -->
+                <TextBlock x:Name="UpdateBanner"
+                           Grid.Row="2"
+                           Text="⬆  UPDATE AVAILABLE"
+                           Foreground="#4CFF70"
+                           FontFamily="Fonts/#TT Norms"
+                           FontSize="10"
+                           FontWeight="Bold"
+                           Margin="0 5 0 0"
+                           Cursor="Hand"
+                           Visibility="Collapsed"
+                           MouseLeftButtonDown="UpdateBanner_Click">
+                    <TextBlock.Effect>
+                        <DropShadowEffect BlurRadius="8" ShadowDepth="0"
+                                          Color="#4CFF70" Opacity="0.4"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>

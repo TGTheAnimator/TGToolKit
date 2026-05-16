@@ -9,10 +9,11 @@
     <StackPanel>
         <!-- Label -->
         <TextBlock Text="{Binding Title}"
-                   Foreground="#E0FFFFFF"
+                   Foreground="#C0FFFFFF"
                    FontFamily="Fonts/#TT Norms"
-                   FontSize="13"
-                   Margin="0 0 0 6"/>
+                   FontSize="11"
+                   FontWeight="Bold"
+                   Margin="0 0 0 5"/>
 
         <!-- Input row -->
         <Grid>
@@ -22,13 +23,15 @@
                 <ColumnDefinition Width="44"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Path text box -->
-            <Border Grid.Column="0"
+            <!-- Path text box with focus ring -->
+            <Border x:Name="InputBorder"
+                    Grid.Column="0"
                     CornerRadius="7"
                     BorderThickness="1"
                     BorderBrush="#15FFFFFF"
-                    Background="#10FFFFFF">
-                <TextBox Padding="10 0"
+                    Background="#0AFFFFFF">
+                <TextBox x:Name="PathBox"
+                         Padding="10 0"
                          Height="36"
                          Background="Transparent"
                          BorderBrush="Transparent"
@@ -38,13 +41,39 @@
                          Text="{Binding Path, UpdateSourceTrigger=PropertyChanged}"
                          SelectionBrush="#60C0132A"
                          CaretBrush="#C0132A"
-                         VerticalContentAlignment="Center">
+                         VerticalContentAlignment="Center"
+                         FocusVisualStyle="{x:Null}">
                     <TextBox.Resources>
                         <Style TargetType="Border">
                             <Setter Property="CornerRadius" Value="7"/>
                         </Style>
                     </TextBox.Resources>
+                    <TextBox.Style>
+                        <Style TargetType="TextBox">
+                            <Style.Triggers>
+                                <Trigger Property="IsFocused" Value="True">
+                                    <Setter Property="Foreground" Value="#E0FFFFFF"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
                 </TextBox>
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ElementName=PathBox, Path=IsFocused}" Value="True">
+                                <Setter Property="BorderBrush" Value="#55C0132A"/>
+                                <Setter Property="Background"  Value="#14C0132A"/>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect BlurRadius="8" ShadowDepth="0"
+                                                          Color="#C0132A" Opacity="0.25"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
             </Border>
 
             <!-- Browse button -->
@@ -52,6 +81,7 @@
                     Height="36"
                     Cursor="Hand"
                     Click="Button_Click"
+                    FocusVisualStyle="{x:Null}"
                     ToolTip="Browse for folder">
                 <Button.Style>
                     <Style TargetType="Button">
@@ -61,18 +91,21 @@
                                     <Border x:Name="Bg"
                                             CornerRadius="7"
                                             BorderThickness="1"
-                                            BorderBrush="#25C0132A"
+                                            BorderBrush="#30C0132A"
                                             Background="#20C0132A">
                                         <TextBlock Text="…"
-                                                   Foreground="#C0FFFFFF"
+                                                   Foreground="#D0FFFFFF"
                                                    FontSize="16"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"/>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bg" Property="Background" Value="#40C0132A"/>
-                                            <Setter TargetName="Bg" Property="BorderBrush" Value="#55C0132A"/>
+                                            <Setter TargetName="Bg" Property="Background"  Value="#45C0132A"/>
+                                            <Setter TargetName="Bg" Property="BorderBrush" Value="#60C0132A"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="Bg" Property="Background" Value="#65C0132A"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>

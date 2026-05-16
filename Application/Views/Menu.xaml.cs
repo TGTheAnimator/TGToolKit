@@ -50,9 +50,14 @@ namespace ToolKitV.Views
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    UpdateBanner.Text = "• UPDATING...";
+                    UpdateBanner.Text      = "⬆  UPDATING...";
                     UpdateBanner.IsEnabled = false;
                     await Updater.ApplyUpdateAsync(release);
+                }
+                else
+                {
+                    // User declined — hide until next launch
+                    UpdateBanner.Visibility = Visibility.Collapsed;
                 }
             }
         }

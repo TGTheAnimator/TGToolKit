@@ -1,35 +1,168 @@
 <Window x:Class="ToolKitV.Views.SplashWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="TGToolKit" Height="450" Width="800"
+        Title="TGToolKit" Height="440" Width="780"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
         WindowStartupLocation="CenterScreen"
         Topmost="True"
         ShowInTaskbar="False">
-    <Border CornerRadius="12" ClipToBounds="True" Background="#0D0D0F" BorderBrush="#30FFFFFF" BorderThickness="1">
+
+    <Window.Resources>
+        <!-- Loading bar fill animation -->
+        <Storyboard x:Key="LoadingAnim" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetName="LoadingFill"
+                             Storyboard.TargetProperty="Width"
+                             From="0" To="640"
+                             Duration="0:0:2.2"
+                             EasingFunction="{x:Null}"/>
+        </Storyboard>
+
+        <!-- Fade-in for the branding panel -->
+        <Storyboard x:Key="BrandFadeIn">
+            <DoubleAnimation Storyboard.TargetName="BrandPanel"
+                             Storyboard.TargetProperty="Opacity"
+                             From="0" To="1"
+                             Duration="0:0:0.9"
+                             BeginTime="0:0:0.3"/>
+        </Storyboard>
+    </Window.Resources>
+
+    <Window.Triggers>
+        <EventTrigger RoutedEvent="Window.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource LoadingAnim}"/>
+            <BeginStoryboard Storyboard="{StaticResource BrandFadeIn}"/>
+        </EventTrigger>
+    </Window.Triggers>
+
+    <Border CornerRadius="14" ClipToBounds="True"
+            Background="#0A0A0F"
+            BorderBrush="#25FFFFFF" BorderThickness="1">
+
+        <!-- Outer red glow ring -->
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="50" ShadowDepth="0"
+                              Color="#C0132A" Opacity="0.25"/>
+        </Border.Effect>
+
         <Grid>
-            <Image Source="../Assets/Images/bg.bmp" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
-            
-            <!-- Subtle gradient overlay -->
+            <!-- Background image -->
+            <Image Source="../Assets/Images/bg.bmp"
+                   Stretch="UniformToFill"
+                   RenderOptions.BitmapScalingMode="HighQuality"
+                   Opacity="0.35"/>
+
+            <!-- Dark vignette overlay -->
             <Border>
                 <Border.Background>
-                    <RadialGradientBrush Center="0.5,0.5" RadiusX="0.7" RadiusY="0.7">
-                        <GradientStop Color="#00000000" Offset="0.5"/>
-                        <GradientStop Color="#800D0D0F" Offset="1"/>
+                    <RadialGradientBrush Center="0.5,0.5" RadiusX="0.8" RadiusY="0.8">
+                        <GradientStop Color="#000A0A0F" Offset="0.3"/>
+                        <GradientStop Color="#E00A0A0F" Offset="1"/>
                     </RadialGradientBrush>
                 </Border.Background>
             </Border>
 
-            <!-- Bottom branding -->
-            <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="20">
-                <TextBlock Text="TGTOOLKIT" Foreground="White" FontSize="18" FontWeight="Bold">
+            <!-- Top-left ambient glow -->
+            <Ellipse Width="400" Height="300"
+                     HorizontalAlignment="Left" VerticalAlignment="Top"
+                     Margin="-80 -100 0 0"
+                     IsHitTestVisible="False">
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="#22C0132A" Offset="0"/>
+                        <GradientStop Color="#00000000" Offset="1"/>
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+            </Ellipse>
+
+            <!-- Red corner accents (top-left, bottom-right) -->
+            <Rectangle Width="40" Height="2" HorizontalAlignment="Left" VerticalAlignment="Top"
+                       Margin="0" Fill="#80C0132A"/>
+            <Rectangle Width="2" Height="40" HorizontalAlignment="Left" VerticalAlignment="Top"
+                       Margin="0" Fill="#80C0132A"/>
+            <Rectangle Width="40" Height="2" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                       Margin="0" Fill="#80C0132A"/>
+            <Rectangle Width="2" Height="40" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                       Margin="0" Fill="#80C0132A"/>
+
+            <!-- Branding panel (fades in) -->
+            <StackPanel x:Name="BrandPanel"
+                        VerticalAlignment="Bottom" HorizontalAlignment="Left"
+                        Margin="36 0 0 52"
+                        Opacity="0">
+                <!-- Red pill badge -->
+                <Border CornerRadius="3"
+                        Background="#C0132A"
+                        Padding="8 3"
+                        HorizontalAlignment="Left"
+                        Margin="0 0 0 12">
+                    <TextBlock Text="FiveM Asset Toolkit"
+                               Foreground="White"
+                               FontFamily="Fonts/#TT Norms"
+                               FontSize="9"
+                               FontWeight="Bold"/>
+                </Border>
+
+                <!-- Main wordmark -->
+                <TextBlock Text="TGTOOLKIT"
+                           Foreground="White"
+                           FontFamily="Fonts/#TT Norms"
+                           FontSize="38"
+                           FontWeight="Bold">
                     <TextBlock.Effect>
-                        <DropShadowEffect BlurRadius="10" ShadowDepth="0" Color="Black"/>
+                        <DropShadowEffect BlurRadius="20" ShadowDepth="0"
+                                          Color="#C0132A" Opacity="0.6"/>
                     </TextBlock.Effect>
                 </TextBlock>
-                <TextBlock Text="INITIALIZING..." Foreground="#80FFFFFF" FontSize="10" HorizontalAlignment="Right" Margin="0 2 0 0"/>
+
+                <!-- Version + author -->
+                <StackPanel Orientation="Horizontal" Margin="2 6 0 0">
+                    <TextBlock Text="v3.2.0"
+                               Foreground="#60FFFFFF"
+                               FontFamily="Fonts/#TT Norms"
+                               FontSize="12"/>
+                    <TextBlock Text="  ·  "
+                               Foreground="#25FFFFFF"
+                               FontFamily="Fonts/#TT Norms"
+                               FontSize="12"/>
+                    <TextBlock Text="TGTheAnimator"
+                               Foreground="#40FFFFFF"
+                               FontFamily="Fonts/#TT Norms"
+                               FontSize="12"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Loading bar at bottom -->
+            <StackPanel VerticalAlignment="Bottom" Margin="0 0 0 0">
+                <!-- Status text -->
+                <TextBlock Text="INITIALIZING..."
+                           Foreground="#30FFFFFF"
+                           FontFamily="Fonts/#TT Norms"
+                           FontSize="9"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Right"
+                           Margin="0 0 14 6"/>
+
+                <!-- Bar track -->
+                <Border Height="2" Background="#10FFFFFF">
+                    <!-- Animated red fill -->
+                    <Border x:Name="LoadingFill"
+                            Width="0"
+                            HorizontalAlignment="Left">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#C0132A" Offset="0"/>
+                                <GradientStop Color="#FF4040" Offset="0.7"/>
+                                <GradientStop Color="#FFAAAA" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="8" ShadowDepth="0"
+                                              Color="#C0132A" Opacity="0.9"/>
+                        </Border.Effect>
+                    </Border>
+                </Border>
             </StackPanel>
         </Grid>
     </Border>
