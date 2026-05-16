@@ -38,7 +38,7 @@ A professional, standalone 3D model viewer—no need to boot up heavy map editor
 - **32-Bit Sequence Grid:** Stop typing raw integer sequences. Use a sleek, modern visual timeline grid to click and draw your emergency light flash patterns.
 - **Instant XML Generation:** Automatically calculates the 32-bit bitmask integers and generates perfect `carcols.meta` XML code ready to copy and paste.
 
-### 🖼️ Texture Optimizer (v3.0)
+### 🖼️ Texture Optimizer (v3.1)
 - **The "Rule of 4" Accuracy:** Strictly enforces multiple-of-4 pixel dimensions to completely eliminate the shimmering and diagonal skewing artifacts caused by standard resizers.
 - **Parallel Processing:** Blasts through recursive folders using asynchronous CPU swarming to run `texconv` batches in a fraction of the time.
 - **Smart Compression:** Auto-encodes to the best format (`BC7` for RGBA, `BC1` for opaque, `BC5` for normals) while shrinking massive 4K textures down to safe engine limits.
@@ -71,7 +71,7 @@ A professional, standalone 3D model viewer—no need to boot up heavy map editor
 
 ### Installation
 
-1. Download the latest **`TGToolKit-v3.0.0.zip`** from the [Releases](../../releases) page.
+1. Download the latest **`TGToolKit-v3.1.0.zip`** from the [Releases](../../releases) page.
 2. Extract the zip to a **completely fresh folder**.
 3. Run **`TGToolKit.exe`**.
 
