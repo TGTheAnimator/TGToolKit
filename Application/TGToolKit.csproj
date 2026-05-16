@@ -8,11 +8,20 @@
     <Authors>TGTheAnimator</Authors>
     <AssemblyName>TGToolKit</AssemblyName>
     <RootNamespace>ToolKitV</RootNamespace>
+    <Version>3.4.1</Version>
+    <AssemblyVersion>3.4.1.0</AssemblyVersion>
+    <FileVersion>3.4.1.0</FileVersion>
     <SignAssembly>false</SignAssembly>
     <ApplicationIcon>Assets\Images\logo.ico</ApplicationIcon>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- ── Single-file self-contained publish ── -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <Optimize>false</Optimize>
