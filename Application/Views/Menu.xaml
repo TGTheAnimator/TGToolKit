@@ -413,7 +413,7 @@
                        FontSize="10"
                        FontWeight="Bold"/>
             <TextBlock x:Name="VersionText"
-                       Text="v3.0.5"
+                       Text="v3.1.0"
                        Foreground="#25FFFFFF"
                        FontFamily="Fonts/#TT Norms"
                        FontSize="9"/>
