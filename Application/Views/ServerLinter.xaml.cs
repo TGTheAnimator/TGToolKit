@@ -20,6 +20,8 @@ namespace ToolKitV.Views
         }
 
         private bool _isSftp = false;
+        private Models.ServerLinter.LinterResult? _lastResult;
+        private string _lastScannedDirectory = string.Empty;
 
         public ServerLinter()
         {
@@ -101,6 +103,7 @@ namespace ToolKitV.Views
                 {
                     provider = new LocalManifestProvider();
                     rootPath = LocalFolder.Path;
+                    _lastScannedDirectory = rootPath; // Store for Auto-Wirer
                 }
                 else
                 {
@@ -151,6 +154,18 @@ namespace ToolKitV.Views
 
                     IssuesList.ItemsSource = vms;
                 }
+
+                // Store result so FixAll can act on it
+                _lastResult = result;
+
+                // Reveal Fix All button only in local mode when deprecated manifests were found
+                FixAllButton.Visibility =
+                    (!_isSftp && result.DeprecatedManifestPaths.Count > 0)
+                        ? Visibility.Visible
+                        : Visibility.Collapsed;
+
+                // Auto-Wire is available after any local scan (it analyses the full ecosystem)
+                AutoWireButton.Visibility = !_isSftp ? Visibility.Visible : Visibility.Collapsed;
             }
             catch (Exception ex)
             {
@@ -159,6 +174,93 @@ namespace ToolKitV.Views
             }
             finally
             {
+                RunLintButton.IsButtonEnabledValue = true;
+            }
+        }
+
+        private void FixAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_lastResult == null || _lastResult.DeprecatedManifestPaths.Count == 0)
+            {
+                MessageBox.Show("No deprecated manifests to fix.", "Auto-Fix",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var confirm = MessageBox.Show(
+                $"This will convert {_lastResult.DeprecatedManifestPaths.Count} __resource.lua file(s) to fxmanifest.lua.\n\n" +
+                "Each file will be rewritten in-place. A backup is NOT created. Continue?",
+                "TGToolKit — Auto-Fix Manifests",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (confirm != MessageBoxResult.Yes) return;
+
+            var log      = new LogWriter("=== Auto-Fix started ===");
+            int fixed_   = LinterAutoFixer.FixDeprecatedManifests(_lastResult, log);
+
+            // Update warning count display
+            int remaining = _lastResult.DeprecatedManifestPaths.Count;
+            ResultWarnings.Text = _lastResult.Warnings.Count.ToString();
+
+            MessageBox.Show(
+                $"Auto-Fix complete: {fixed_} manifest(s) converted to fxmanifest.lua.",
+                "TGToolKit — Auto-Fix",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+
+            // Hide the button if nothing is left to fix
+            if (remaining == 0)
+                FixAllButton.Visibility = Visibility.Collapsed;
+        }
+        private async void AutoWireButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_lastResult == null || string.IsNullOrWhiteSpace(_lastScannedDirectory))
+            {
+                MessageBox.Show("Run a local scan first.", "Auto-Wire",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var confirm = MessageBox.Show(
+                "TGToolKit will intelligently re-wire configuration files across your entire server:\n\n" +
+                $"  • Detected Ecosystem: {_lastResult.InstalledResources.Count} resources\n" +
+                "  • server.cfg convar injection (pma-voice, oxmysql)\n" +
+                "  • Universal config re-routing (Inventory, Target, Phone, Notify)\n" +
+                "  • ox_lib fxmanifest injection for missing declarations\n" +
+                "  • __resource.lua → fxmanifest.lua conversion\n\n" +
+                "⚠️ All modified files will receive a .tg_backup before changes are applied.\n" +
+                "Continue?",
+                "TGToolKit — Auto-Wire Config",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (confirm != MessageBoxResult.Yes) return;
+
+            AutoWireButton.IsEnabled     = false;
+            RunLintButton.IsButtonEnabledValue = false;
+
+            try
+            {
+                var log      = new LogWriter("=== User Initiated Auto-Wire ===");
+                int fixes    = await Task.Run(() =>
+                    LinterAutoFixer.ApplySmartFixesAsync(
+                        _lastScannedDirectory,
+                        _lastResult.InstalledResources,
+                        log));
+
+                MessageBox.Show(
+                    $"Auto-Wire complete: {fixes} configuration fix(es) applied.\n\n" +
+                    "Backups (.tg_backup) have been created beside every modified file.\n" +
+                    "It is recommended to re-run the Linter to verify the changes.",
+                    "TGToolKit — Auto-Wire Complete",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Auto-Wire error:\n{ex.Message}", "Auto-Wire Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                AutoWireButton.IsEnabled           = true;
                 RunLintButton.IsButtonEnabledValue = true;
             }
         }

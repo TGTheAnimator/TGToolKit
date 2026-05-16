@@ -17,10 +17,114 @@
         <DockPanel Grid.Column="0" LastChildFill="True">
 
             <Grid DockPanel.Dock="Bottom" Margin="0 16 0 0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="8"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="6"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
                 <local:Button x:Name="RunLintButton"
+                              Grid.Row="0"
                               Title="Run Linter"
                               IsButtonEnabledValue="False"
                               Click="RunLintButton_Click"/>
+
+                <!-- Fix All button — converts deprecated __resource.lua files -->
+                <Button x:Name="FixAllButton"
+                        Grid.Row="2"
+                        Content="&#x26A1;  Fix All Manifests"
+                        Click="FixAllButton_Click"
+                        Cursor="Hand"
+                        Visibility="Collapsed"
+                        FontFamily="Fonts/#TT Norms"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Height="38"
+                        BorderThickness="0">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bg"
+                                                CornerRadius="8"
+                                                Background="#1A4CFF70"
+                                                BorderBrush="#354CFF70"
+                                                BorderThickness="1">
+                                            <TextBlock Text="{TemplateBinding Content}"
+                                                       Foreground="#4CFF70"
+                                                       FontFamily="Fonts/#TT Norms"
+                                                       FontSize="12"
+                                                       FontWeight="Bold"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bg" Property="Background"  Value="#2E4CFF70"/>
+                                                <Setter TargetName="Bg" Property="BorderBrush" Value="#604CFF70"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="Bg" Property="Background" Value="#454CFF70"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
+                <!-- Auto-Wire button — fuzzy ecosystem wirer, only in local mode post-scan -->
+                <Button x:Name="AutoWireButton"
+                        Grid.Row="4"
+                        Content="&#x1F9E0;  Auto-Wire Config"
+                        Click="AutoWireButton_Click"
+                        Cursor="Hand"
+                        Visibility="Collapsed"
+                        FontFamily="Fonts/#TT Norms"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Height="38"
+                        BorderThickness="0">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bg"
+                                                CornerRadius="8"
+                                                Background="#20FFB347"
+                                                BorderBrush="#40FFB347"
+                                                BorderThickness="1">
+                                            <TextBlock Text="{TemplateBinding Content}"
+                                                       Foreground="#FFB347"
+                                                       FontFamily="Fonts/#TT Norms"
+                                                       FontSize="12"
+                                                       FontWeight="Bold"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bg" Property="Background"  Value="#33FFB347"/>
+                                                <Setter TargetName="Bg" Property="BorderBrush" Value="#65FFB347"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="Bg" Property="Background" Value="#50FFB347"/>
+                                            </Trigger>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter TargetName="Bg" Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
             </Grid>
 
             <ScrollViewer VerticalScrollBarVisibility="Auto"

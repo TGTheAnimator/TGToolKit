@@ -155,13 +155,13 @@ namespace ToolKitV.Models
         private static List<List<Texture>> BinPack(List<Texture> textures, float perTexMb)
         {
             // Sort largest-first for better bin utilisation
-            var sorted = textures.OrderByDescending(t => EstimateTextureVirtualMB(t)).ToList();
+            var sorted = textures.OrderByDescending(t => CalculateExactTextureSize(t)).ToList();
             var chunks = new List<List<Texture>>();
             var sizes  = new List<float>();
 
             foreach (var tex in sorted)
             {
-                float texSize = EstimateTextureVirtualMB(tex);
+                float texSize = CalculateExactTextureSize(tex);
 
                 bool placed = false;
                 for (int b = 0; b < chunks.Count; b++)
@@ -186,22 +186,50 @@ namespace ToolKitV.Models
         }
 
         /// <summary>
-        /// Mathematically estimates how much VRAM a texture consumes in FiveM.
-        /// Accounts for block compression (BC1/BC3/BC7) and mipmap chains (×1.33).
-        /// From the original YTD Splitter specification.
+        /// Calculates the exact VRAM footprint of a texture using GPU block-compression math.
+        /// Block-compressed formats (BC1–BC7) divide the image into 4×4 pixel grids and store
+        /// a fixed number of bytes per block. Every mip level is included and rounded up to the
+        /// nearest 4×4 boundary, matching what FiveM's streaming engine actually allocates.
         /// </summary>
-        private static float EstimateTextureVirtualMB(Texture tex)
+        private static float CalculateExactTextureSize(Texture tex)
         {
-            float bytesPerPixel = 1.0f; // Default for DXT5/BC3/BC7 (8 bits per block)
+            // Bytes per 4×4 block (compressed) or per pixel (uncompressed)
+            int  blockSize     = 16;  // Default: BC3/DXT5, BC7
+            bool isUncompressed = false;
 
             if (tex.Format == TextureFormat.D3DFMT_DXT1 || tex.Format == TextureFormat.D3DFMT_ATI1)
-                bytesPerPixel = 0.5f; // BC1/BC4 use half the space (4 bits per block)
+                blockSize = 8;   // BC1/BC4 — 8 bytes per 4×4 block
             else if (tex.Format == TextureFormat.D3DFMT_A8R8G8B8 || tex.Format == TextureFormat.D3DFMT_A8B8G8R8)
-                bytesPerPixel = 4.0f; // Uncompressed 32-bit RGBA
+            {
+                blockSize     = 4; // Uncompressed RGBA: 4 bytes per pixel
+                isUncompressed = true;
+            }
 
-            // Width × Height × BPP × 1.33 (mipmap chain overhead)
-            float estimatedBytes = tex.Width * tex.Height * bytesPerPixel * 1.33f;
-            return estimatedBytes / 1024f / 1024f;
+            long totalBytes = 0;
+            int  width  = tex.Width;
+            int  height = tex.Height;
+            int  levels = Math.Max(1, (int)tex.Levels);
+
+            for (int i = 0; i < levels; i++)
+            {
+                if (isUncompressed)
+                {
+                    totalBytes += (long)width * height * blockSize;
+                }
+                else
+                {
+                    // Block-compressed textures MUST round up to the nearest 4×4 block boundary
+                    int wBlocks = Math.Max(1, (width  + 3) / 4);
+                    int hBlocks = Math.Max(1, (height + 3) / 4);
+                    totalBytes += (long)wBlocks * hBlocks * blockSize;
+                }
+
+                // Halve dimensions for the next mip level
+                width  = Math.Max(1, width  / 2);
+                height = Math.Max(1, height / 2);
+            }
+
+            return totalBytes / 1024f / 1024f; // Exact MB
         }
 
         private static void SaveYtdChunk(List<Texture> textures, string outputPath)

@@ -23,9 +23,19 @@ namespace ToolKitV.Models
 
         public class LinterResult
         {
-            public int                  ResourcesScanned  { get; set; }
-            public int                  ResourcesWithIssues { get; set; }
-            public List<LinterWarning>  Warnings          { get; set; } = new();
+            public int                  ResourcesScanned        { get; set; }
+            public int                  ResourcesWithIssues     { get; set; }
+            public List<LinterWarning>  Warnings                { get; set; } = new();
+            /// <summary>
+            /// Full local file paths of any deprecated __resource.lua files found.
+            /// Populated only in Local mode — SFTP mode has no writable paths.
+            /// </summary>
+            public List<string>         DeprecatedManifestPaths { get; set; } = new();
+            /// <summary>
+            /// All resource folder-names discovered during the scan.
+            /// Used by the Auto-Wirer to build the server's dependency graph.
+            /// </summary>
+            public HashSet<string>      InstalledResources      { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         }
 
         // ─── Known integration hints ─────────────────────────────────────────────
@@ -33,29 +43,153 @@ namespace ToolKitV.Models
         private static readonly Dictionary<string, string> KnownIntegrations =
             new(StringComparer.OrdinalIgnoreCase)
         {
-            ["ox_inventory"]        = "ox_inventory requires items registered in data/items.lua and ox_inventory started before dependent resources.",
-            ["ox_lib"]              = "ox_lib must be started before any resource using @ox_lib/init.lua.",
-            ["ox_target"]           = "ox_target requires ox_lib. Ensure ox_lib starts first.",
-            ["qb-core"]             = "qb-core must be the first framework resource. Check server.cfg start order.",
-            ["qbx_core"]            = "qbx_core (Qbox) replaces qb-core. Do not run both simultaneously.",
-            ["es_extended"]         = "es_extended (ESX) must start before any esx_* dependent resources.",
-            ["PolyZone"]            = "PolyZone must start before any resource using CreateCircleZone or CreateBoxZone.",
-            ["interact-sound"]      = "interact-sound requires NUI callbacks. Ensure no other resource blocks NUI on this endpoint.",
-            ["pma-voice"]           = "pma-voice requires mumble-voip disabled in server.cfg and a valid voice server configured.",
-            ["screenshot-basic"]    = "screenshot-basic requires the Discord webhook URL set and a compatible game build for canvas capturing.",
-            ["progressbar"]         = "progressbar needs HTML/CSS files intact. If UI doesn't show, check NUI callbacks are not blocked.",
-            ["mysql-async"]         = "mysql-async is deprecated. Migrate to oxmysql for improved stability.",
-            ["oxmysql"]             = "oxmysql must start before any resource that uses exports.oxmysql.",
-            ["hardcap"]             = "hardcap enforces max player count. Ensure the value matches your server license slot count.",
-            ["spawnmanager"]        = "spawnmanager should start after the framework. Check server.cfg order.",
-            ["mapmanager"]          = "mapmanager is a core FiveM resource. Do not remove or modify its start order.",
-            ["sessionmanager"]      = "sessionmanager controls player connections. Removing it may break player syncing.",
-            ["basic-gamemode"]      = "basic-gamemode is a placeholder. It should be replaced or removed in production.",
-            ["bob74_ipl"]           = "bob74_ipl handles interior proxy loading. Load before any MLO-dependent resources.",
-            ["illenium-appearance"] = "illenium-appearance requires cl_enableLargeFetch=1 in server.cfg for large clothing data.",
-            ["jg-advancedgarages"]  = "jg-advancedgarages requires database tables. Run its SQL on first install.",
-            ["cd_garage"]           = "cd_garage (Codesign) requires database access and the framework started first.",
-            ["vSync"]               = "vSync (Visual Sync) requires the correct time/weather zone configuration in config.lua.",
+            // ════════ CORE & DATABASES ════════
+            ["oxmysql"]              = "oxmysql: Requires 'mysql_connection_string' convar in server.cfg. Essential for all modern DB scripts.",
+            ["ox_lib"]               = "ox_lib: Core dependency. Scripts must declare 'shared_script \"@ox_lib/init.lua\"' in their fxmanifest.",
+            ["mysql-async"]          = "[DEPRECATED] mysql-async: Obsolete. Migrate to oxmysql to prevent thread hitching and connection leaks.",
+            ["ghmattimysql"]         = "[DEPRECATED] ghmattimysql: Obsolete. Migrate to oxmysql.",
+
+            // ════════ INVENTORIES ════════
+            ["ox_inventory"]         = "ox_inventory: Disable default framework inventories (qb-inventory/esx_inventory) and default weapon scripts.",
+            ["qs-inventory"]         = "qs-inventory: Requires running the provided SQL file. Disable default weapon HUDs to prevent overlap.",
+            ["ps-inventory"]         = "ps-inventory: Requires custom UI images mapped correctly in HTML. Ensure qb-inventory is stopped.",
+            ["core_inventory"]       = "core_inventory: Ensure SQL schema is executed and metadata flags are properly set in config.",
+            ["linden_inventory"]     = "[LEGACY] linden_inventory: Consider upgrading to ox_inventory for modern support.",
+
+            // ════════ TARGETING (THIRD EYE) ════════
+            ["ox_target"]            = "ox_target: Must start BEFORE scripts that rely on it. Disable qb-target to prevent third-eye conflicts.",
+            ["qb-target"]            = "qb-target: Ensure 'interact-sound' is installed for UI click sounds.",
+            ["qtarget"]              = "[DEPRECATED] qtarget: Superseded by ox_target. Migrate for improved performance.",
+
+            // ════════ VOICE & AUDIO ════════
+            ["pma-voice"]            = "pma-voice: Requires convars 'voice_useNativeAudio' and 'voice_use3dAudio'. Ensure mumble-voip is disabled.",
+            ["saltychat"]            = "saltychat: Requires a dedicated TeamSpeak server integration. Not compatible with pma-voice.",
+            ["xsound"]               = "xsound: Required by many boombox/DJ scripts. Ensure YouTube/Stream API rate limits aren't blocking audio.",
+            ["interact-sound"]       = "interact-sound: Client-side .ogg files must be placed in interact-sound/client/html/sounds/.",
+
+            // ════════ PHONES ════════
+            ["lb-phone"]             = "lb-phone: Heavy resource. Requires oxmysql and its specific map assets streamed correctly. Disable default framework phones.",
+            ["qs-smartphone"]        = "qs-smartphone: Demands specific SQL structure for contacts/messages. Disable default framework phones.",
+            ["gksphone"]             = "gksphone: Requires webhooks and external API keys (Weather/Crypto) configured in config.json.",
+            ["renewed-phone"]        = "renewed-phone: Requires ox_lib. Ensure all older phone scripts are disabled.",
+            ["high_phone"]           = "high_phone: Requires running extensive SQL migrations for app data tables.",
+
+            // ════════ GARAGES, VEHICLES & KEYS ════════
+            ["jg-advancedgarages"]   = "jg-advancedgarages: Disable default garages. Ensure impound police job names match your framework config.",
+            ["jg-dealerships"]       = "jg-dealerships: Vehicles must be defined in the jg-dealerships SQL table, NOT the default framework vehicle tables.",
+            ["qs-vehiclekeys"]       = "qs-vehiclekeys: Disable qb-vehiclekeys or any default key scripts to prevent unlock desync.",
+            ["wasabi_carlock"]       = "wasabi_carlock: Replaces default lock scripts. Check export compatibility with your garage system.",
+            ["cd_garage"]            = "cd_garage: Execute SQL schema and ensure shell/interior dependencies start prior.",
+            ["jp-keys"]              = "jp-keys: Replaces default vehicle key scripts (e.g., qb-vehiclekeys). Stop old key scripts first.",
+
+            // ════════ CLOTHING & APPEARANCE ════════
+            ["illenium-appearance"]  = "illenium-appearance: Requires complete DB clothing table migration. Run migration SQL and set cl_enableLargeFetch=1 in server.cfg.",
+            ["fivem-appearance"]     = "fivem-appearance: Requires correct SQL table for outfit saving. Disable qb-clothing or esx_skin.",
+            ["dpclothing"]           = "dpclothing: If using DB-saved keybinds, the provided SQL must be imported first.",
+
+            // ════════ UI, HUD & NOTIFICATIONS ════════
+            ["okokNotify"]           = "okokNotify: Replaces default notifications. Ensure your framework config points to okok exports.",
+            ["okokChat"]             = "okokChat: Disable default 'chat' resource to prevent double-rendering.",
+            ["okokTextUI"]           = "okokTextUI: Ensure scripts using DrawText point to the okok export rather than the framework default.",
+            ["codem-hud"]            = "codem-hud: Disable default HUDs (qb-hud). Configure seatbelt/fuel exports in codem config.",
+            ["ps-ui"]                = "ps-ui: Minigame/UI library. Scripts calling its exports MUST NOT load before ps-ui starts.",
+            ["progressbar"]          = "progressbar: Ensure NUI callbacks are not blocked by another resource serving the same endpoint.",
+            ["screenshot-basic"]     = "screenshot-basic: Requires Discord webhook URL and a compatible game build for canvas capture.",
+
+            // ════════ POLICE, EMS & DISPATCH ════════
+            ["ps-dispatch"]          = "ps-dispatch: Requires modifying core framework events (shooting/stealing) to trigger alerts. Follow the README injection guide.",
+            ["qs-dispatch"]          = "qs-dispatch: Ensure job arrays are configured so EMS and Police don't receive crossed alert calls.",
+            ["wasabi_ambulance"]     = "wasabi_ambulance: Replaces default death systems. MUST completely disable qb-ambulancejob/esx_ambulancejob.",
+            ["wasabi_police"]        = "wasabi_police: Requires custom items (handcuffs, keys) in your inventory. Ensure evidence systems don't overlap with core framework.",
+            ["wasabi_evidence"]      = "wasabi_evidence: Ensure bullet casing models and blood drops don't conflict with any active cleanup scripts.",
+            ["wasabi_multijob"]      = "wasabi_multijob: Requires database schema execution on first install. Verify framework default job-setting logic isn't interfering.",
+
+            // ════════ LATION SCRIPTS ════════
+            ["lation_core"]          = "lation_core: Required for ALL Lation scripts. Must load BEFORE any other lation_* resource in server.cfg.",
+            ["lation_chopshop"]      = "lation_chopshop: Requires a targeting script (ox_target/qb-target). Ensure coords don't conflict with MLOs.",
+            ["lation_weed"]          = "lation_weed: Requires proper item registration (ox/qb). Check config.lua for PolyZone setups.",
+            ["lation_laundering"]    = "lation_laundering: Relies on framework dirty money items (e.g., 'markedbills'). Verify item names in your inventory config.",
+
+            // ════════ RCORE SCRIPTS ════════
+            ["rcore_gangs"]          = "rcore_gangs: Requires extensive zone mapping. Disable default qb-gangs system to avoid conflict.",
+            ["rcore_prison"]         = "rcore_prison: Replaces default jail scripts. Ensure jail/unjail commands are properly routed in your framework.",
+            ["rcore_arcade"]         = "rcore_arcade: Requires CEF (Chromium Embedded Framework) enabled on the client. Test NUI functionality after install.",
+
+            // ════════ FUEL SYSTEMS ════════
+            ["ox_fuel"]              = "ox_fuel: Replaces legacy fuel scripts. Ensure all gas station MLOs are compatible with the new target zones.",
+            ["ps-fuel"]              = "ps-fuel: Requires setting up nozzle models. Disable default framework fuel scripts before starting.",
+            ["LegacyFuel"]           = "[DEPRECATED] LegacyFuel: Causes sync desync on modern builds. Migrate to ox_fuel or ps-fuel.",
+
+            // ════════ HOUSING & DOORS ════════
+            ["ps-housing"]           = "ps-housing: Requires an interior props resource (e.g., K4MB1) to be streamed for furniture placement.",
+            ["qs-housing"]           = "qs-housing: Disable default framework housing. Check routing bucket logic for garage conflicts.",
+            ["jp-motels"]            = "jp-motels: Requires routing bucket setup in server.cfg to handle interior instancing correctly.",
+            ["ox_doorlock"]          = "ox_doorlock: Highly optimised. Replaces qb-doorlock and nui_doorlock. Run the migration tool if upgrading.",
+            ["qb-doorlock"]          = "[LEGACY] qb-doorlock: Consider upgrading to ox_doorlock for better performance and stability.",
+
+            // ════════ MODERN INFRASTRUCTURE ════════
+            ["renewed-banking"]      = "renewed-banking: Requires ox_lib. Disable qb-banking/esx_banking — running both causes transaction duplication.",
+            ["xdope_vangelico"]      = "xdope_vangelico: Requires specific minigame dependencies (e.g., ps-ui, memorygame). Verify all exports exist.",
+
+            // ════════ ENVIRONMENT & MAPPING ════════
+            ["bob74_ipl"]            = "bob74_ipl: Must start BEFORE other map resources to ensure default GTA V interiors load correctly.",
+            ["vSync"]                = "vSync: Conflicts with modern framework weather systems. Choose exactly one weather resource.",
+            ["cd_easytime"]          = "cd_easytime: Replaces vSync and qb-weathersync. Disable those before running this.",
+            ["PolyZone"]             = "PolyZone: Must start before any resource using CreateCircleZone or CreateBoxZone.",
+            ["spawnmanager"]         = "spawnmanager: Must start after the framework. Check server.cfg start order.",
+            ["mapmanager"]           = "mapmanager: Core FiveM resource. Do not remove or modify its start order.",
+            ["sessionmanager"]       = "sessionmanager: Controls player connections. Removing it may break player syncing.",
+            ["basic-gamemode"]       = "basic-gamemode: Placeholder resource. Remove or replace in any production environment.",
+            ["hardcap"]              = "hardcap: Enforces max player count. Ensure the value matches your server license slot count.",
+
+            // ════════ JPRESOURCES (JPR) ════════
+            ["jpr-libs"]             = "jpr-libs: Core dependency for ALL JPR scripts. Must start BEFORE jpr-phonesystem, jpr-garages, jpr-mdtsystem, etc.",
+            ["jpr-phonesystem"]      = "jpr-phonesystem: Disable your framework's default phone. Requires valid webhook setup for camera functionality.",
+            ["jpr-inventory"]        = "jpr-inventory: Disable default framework inventories before starting. Ensure SQL schema is imported.",
+            ["jpr-garages"]          = "jpr-garages: Disable default framework garages (qb-garages, etc.). Ensure Qbox/QBCore vehicle tables are synced.",
+            ["jpr-mdtsystem"]        = "jpr-mdtsystem: ⚠️ CONFLICT RISK — Only run ONE MDT system (jpr-mdtsystem, xd_mdt, or redutzu-mdt). Requires precise SQL schema for charges and warrants.",
+            ["jpr-mechanic"]         = "jpr-mechanic: ⚠️ CONFLICT RISK — Conflicts with jg-mechanic and xd_freetuner. Ensure only ONE mechanic/tuning script is active.",
+            ["jpr-policejob"]        = "jpr-policejob: Ensure framework job names strictly match the config definitions. Disable qb-policejob.",
+
+            // ════════ XDOPE (XD) ════════
+            ["xd_lib"]               = "xd_lib: Core dependency for ALL xDope scripts. Must start at the top of server.cfg before any xd_* resource.",
+            ["xd_multicharacter"]    = "xd_multicharacter: Disable default framework character selection (qb-multicharacter). Qbox users ensure identity bridging is active.",
+            ["xd_ambulancejob"]      = "xd_ambulancejob: Replaces default EMS systems. MUST completely disable qb-ambulancejob or esx_ambulancejob.",
+            ["xd_chopshop"]          = "xd_chopshop: ⚠️ CONFLICT RISK — Check polyzones for overlap with lation_chopshop if both are installed. Pick one.",
+            ["xd_racing"]            = "xd_racing: Requires specific SQL tables for track saving and ELO. Ensure oxmysql connection is stable.",
+            ["xd_hud"]               = "xd_hud: Disable all default HUDs (qb-hud, codem-hud). Qbox users ensure hunger/thirst metadata is correctly bridged.",
+            ["xd_dealerships"]       = "xd_dealerships: Vehicles must be defined in the xd_dealerships SQL table, not just the framework shared vehicle list.",
+            ["xd_mdt"]               = "xd_mdt: ⚠️ CONFLICT RISK — Only run ONE MDT system (xd_mdt, jpr-mdtsystem, or redutzu-mdt). Run the provided SQL before first start.",
+
+            // ════════ LATION SCRIPTS (EXTENDED) ════════
+            ["lation_ui"]            = "lation_ui: Standalone notification/UI replacement. Ensure 'Config.Notify' or 'Config.UI' in dependent scripts point to Lation exports.",
+            ["lation_coke"]          = "lation_coke: ⚠️ CONFLICT RISK — Ensure processing locations don't overlap with xd_cocaine if both are installed.",
+            ["lation_labs"]          = "lation_labs: Requires lation_core started first. Verify item names match your ox_inventory or qb-inventory definitions.",
+
+            // ════════ JG SCRIPTS (EXTENDED) ════════
+            ["jg-mechanic"]          = "jg-mechanic: ⚠️ CONFLICT RISK — Requires jg-mechanic-props. Conflicts with jpr-mechanic and onx-tuning. Choose only ONE mechanic script.",
+            ["jg-vehiclemileage"]    = "jg-vehiclemileage: Ensure the SQL table for mileage tracking is imported to prevent errors on vehicle entry.",
+
+            // ════════ RAHE SCRIPTS ════════
+            ["rahe-boosting"]        = "rahe-boosting: Requires specific hacking device items registered in ox_inventory. Check item name casing.",
+            ["rahe-hackingdevice"]   = "rahe-hackingdevice: Ensure the minigame NUI does not conflict with ps-ui or xd_minigames.",
+            ["rahe-audio"]           = "rahe-audio: Required for rahe-speakers. Ensure it does not conflict with xsound or rm_stream.",
+
+            // ════════ KQ SCRIPTS (KuzQuality) ════════
+            ["kq_brakeoverheat"]     = "kq_brakeoverheat: High tick-rate on client threads. Ensure vehicle meta handling values don't conflict with its brake calculations.",
+            ["kq_realoffroad"]       = "kq_realoffroad: Modifies vehicle traction dynamically. Test extensively alongside xd_handling — both modify the same native properties.",
+            ["kq_driftsmoke"]        = "kq_driftsmoke: Can cause FPS drops on lower-end client PCs due to particle spawning. Consider setting spawn limits in config.",
+
+            // ════════ WASABI SCRIPTS (EXTENDED) ════════
+            ["wasabi_bridge"]        = "wasabi_bridge: Core requirement for modern Wasabi scripts. Fully compatible with Qbox — ensure Config.Framework is set to 'qbx'.",
+            ["wasabi_gangwars"]      = "wasabi_gangwars: Ensure gang definitions exactly match your Qbox/QBCore gang configurations in shared data.",
+
+            // ════════ OTHER NOTABLE DETECTIONS ════════
+            ["qbx_core"]             = "qbx_core (Qbox): Ensure ox_lib AND oxmysql are started BEFORE this resource. Do NOT run qb-core alongside unless strictly using the compatibility bridge.",
+            ["redutzu-mdt"]          = "redutzu-mdt: ⚠️ CONFLICT RISK — Comprehensive MDT. Requires redutzu-mdt-prop and SQL setup. Pick ONLY ONE MDT (xd_mdt, jpr-mdtsystem, or redutzu-mdt).",
+            ["rcore_radiocar"]       = "rcore_radiocar: Check for UI conflicts with your active HUD. Requires xsound or a compatible audio routing script.",
+            ["onx-tuning"]           = "onx-tuning: High-end tuning script. ⚠️ CONFLICT RISK — Do not run alongside jg-mechanic or jpr-mechanic simultaneously.",
+            ["boii_utils"]           = "boii_utils: Core library for all BOII scripts. Must start before boii_chat or any other boii_* resources.",
         };
 
         // ─── Deprecated patterns ─────────────────────────────────────────────────
@@ -94,6 +228,9 @@ namespace ToolKitV.Models
                 var (resourceName, content) = manifests[i];
                 bool hadIssue = false;
 
+                // Track every scanned resource name for the Auto-Wirer dependency graph
+                result.InstalledResources.Add(resourceName);
+
                 hadIssue |= LintDeprecatedManifest(resourceName, content, result);
                 hadIssue |= LintMissingFxVersion(resourceName, content, result);
                 hadIssue |= LintMissingGame(resourceName, content, result);
@@ -118,7 +255,7 @@ namespace ToolKitV.Models
 
         // ─── Lint rules ──────────────────────────────────────────────────────────
 
-        private static bool LintDeprecatedManifest(string name, string content, LinterResult result)
+        private static bool LintDeprecatedManifest(string name, string content, LinterResult result, string? filePath = null)
         {
             // Using __resource.lua is deprecated since FiveM SDK v2
             if (!content.Contains("fx_version") && content.Contains("resource_manifest_version"))
@@ -129,6 +266,9 @@ namespace ToolKitV.Models
                     Message      = "Uses legacy __resource.lua format. Migrate to fxmanifest.lua with fx_version 'cerulean'.",
                     Severity     = Severity.Warning
                 });
+                // Track the path so the AutoFixer can act on it
+                if (filePath != null)
+                    result.DeprecatedManifestPaths.Add(filePath);
                 return true;
             }
             return false;

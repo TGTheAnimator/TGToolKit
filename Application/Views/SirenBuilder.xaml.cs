@@ -130,5 +130,34 @@ namespace ToolKitV.Views
             };
             timer.Start();
         }
+
+        // ─── Per-row shift / invert handlers ─────────────────────────────────────
+
+        private void ShiftLeft_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is SirenRow row)
+            {
+                row.ShiftLeft();
+                StatusText.Text = $"{row.LightName}: pattern shifted ◄ left.";
+            }
+        }
+
+        private void ShiftRight_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is SirenRow row)
+            {
+                row.ShiftRight();
+                StatusText.Text = $"{row.LightName}: pattern shifted ► right.";
+            }
+        }
+
+        private void Invert_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is SirenRow row)
+            {
+                row.InvertPattern();
+                StatusText.Text = $"{row.LightName}: pattern inverted.";
+            }
+        }
     }
 }

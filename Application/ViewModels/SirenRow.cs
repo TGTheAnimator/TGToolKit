@@ -89,6 +89,65 @@ namespace ToolKitV.ViewModels
                 Ticks[i].IsOn = pattern[i];
         }
 
+        // ─── Data manipulation commands ───────────────────────────────────────────
+
+        /// <summary>Rotates the entire pattern one step to the right (circular shift).</summary>
+        public void ShiftRight()
+        {
+            bool last = Ticks[31].IsOn;
+            for (int i = 31; i > 0; i--)
+                Ticks[i].IsOn = Ticks[i - 1].IsOn;
+            Ticks[0].IsOn = last;
+            OnPropertyChanged(nameof(SequenceDisplay));
+        }
+
+        /// <summary>Rotates the entire pattern one step to the left (circular shift).</summary>
+        public void ShiftLeft()
+        {
+            bool first = Ticks[0].IsOn;
+            for (int i = 0; i < 31; i++)
+                Ticks[i].IsOn = Ticks[i + 1].IsOn;
+            Ticks[31].IsOn = first;
+            OnPropertyChanged(nameof(SequenceDisplay));
+        }
+
+        /// <summary>Flips every tick — great for building alternating lightbar sequences.</summary>
+        public void InvertPattern()
+        {
+            for (int i = 0; i < 32; i++)
+                Ticks[i].IsOn = !Ticks[i].IsOn;
+            OnPropertyChanged(nameof(SequenceDisplay));
+        }
+
+        /// <summary>
+        /// Applies a named preset, clearing the grid first.
+        /// Supported: "QuadFlash", "DoubleFlash", "Alternating", "SteadyOn"
+        /// </summary>
+        public void ApplyPreset(string patternType)
+        {
+            // Clear all
+            for (int i = 0; i < 32; i++) Ticks[i].IsOn = false;
+
+            switch (patternType)
+            {
+                case "QuadFlash":
+                    // 1010 1010 0000 0000 …
+                    Ticks[0].IsOn = Ticks[2].IsOn = Ticks[4].IsOn = Ticks[6].IsOn = true;
+                    break;
+                case "DoubleFlash":
+                    Ticks[0].IsOn = Ticks[2].IsOn = true;
+                    break;
+                case "Alternating":
+                    for (int i = 0; i < 32; i += 2) Ticks[i].IsOn = true;
+                    break;
+                case "SteadyOn":
+                    for (int i = 0; i < 32; i++) Ticks[i].IsOn = true;
+                    break;
+            }
+
+            OnPropertyChanged(nameof(SequenceDisplay));
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         protected void OnPropertyChanged([CallerMemberName] string? name = null)

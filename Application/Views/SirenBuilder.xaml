@@ -205,6 +205,7 @@
                                             <ColumnDefinition Width="90"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
 
                                         <!-- Row label (click to select) -->
@@ -244,6 +245,50 @@
                                                    FontSize="10"
                                                    VerticalAlignment="Center"
                                                    Margin="8 0 0 0"/>
+
+                                        <!-- Shift / Invert micro-buttons -->
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal"
+                                                    VerticalAlignment="Center" Margin="6 0 0 0">
+                                            <Button Content="◄"
+                                                    Tag="{Binding}"
+                                                    Click="ShiftLeft_Click"
+                                                    ToolTip="Shift pattern left (circular)"
+                                                    Cursor="Hand"
+                                                    Width="24" Height="20"
+                                                    Padding="0"
+                                                    FontSize="10"
+                                                    Foreground="#80FFFFFF"
+                                                    Background="#10FFFFFF"
+                                                    BorderBrush="#15FFFFFF"
+                                                    BorderThickness="1"
+                                                    Margin="0 0 2 0"/>
+                                            <Button Content="INV"
+                                                    Tag="{Binding}"
+                                                    Click="Invert_Click"
+                                                    ToolTip="Invert pattern (flip all ticks)"
+                                                    Cursor="Hand"
+                                                    Width="30" Height="20"
+                                                    Padding="0"
+                                                    FontSize="9"
+                                                    FontWeight="Bold"
+                                                    Foreground="#70C0132A"
+                                                    Background="#12C0132A"
+                                                    BorderBrush="#25C0132A"
+                                                    BorderThickness="1"
+                                                    Margin="0 0 2 0"/>
+                                            <Button Content="►"
+                                                    Tag="{Binding}"
+                                                    Click="ShiftRight_Click"
+                                                    ToolTip="Shift pattern right (circular)"
+                                                    Cursor="Hand"
+                                                    Width="24" Height="20"
+                                                    Padding="0"
+                                                    FontSize="10"
+                                                    Foreground="#80FFFFFF"
+                                                    Background="#10FFFFFF"
+                                                    BorderBrush="#15FFFFFF"
+                                                    BorderThickness="1"/>
+                                        </StackPanel>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
