@@ -1,0 +1,296 @@
+<UserControl x:Class="ToolKitV.Views.SirenBuilder"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:ToolKitV.Views"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <!-- Animated ToggleButton tick cell style -->
+        <Style x:Key="TickStyle" TargetType="ToggleButton">
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="Margin" Value="1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#20FFFFFF"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Root"
+                                CornerRadius="3"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                Background="#10FFFFFF">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CheckStates">
+                                    <VisualStateGroup.Transitions>
+                                        <VisualTransition GeneratedDuration="0:0:0.08"/>
+                                    </VisualStateGroup.Transitions>
+                                    <VisualState x:Name="Checked">
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Root"
+                                                            Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                            To="#C0132A" Duration="0:0:0.08"/>
+                                            <ColorAnimation Storyboard.TargetName="Root"
+                                                            Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)"
+                                                            To="#FF5555" Duration="0:0:0.08"/>
+                                        </Storyboard>
+                                    </VisualState>
+                                    <VisualState x:Name="Unchecked">
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Root"
+                                                            Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                            To="#1AFFFFFF" Duration="0:0:0.08"/>
+                                            <ColorAnimation Storyboard.TargetName="Root"
+                                                            Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)"
+                                                            To="#20FFFFFF" Duration="0:0:0.08"/>
+                                        </Storyboard>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="28 20 28 20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header / controls row -->
+        <Grid Grid.Row="0" Margin="0 0 0 16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <Button x:Name="AddRowBtn"
+                        Content="+ Add Siren"
+                        Click="AddRow_Click"
+                        Background="#15FFFFFF"
+                        Foreground="White"
+                        BorderBrush="#20FFFFFF"
+                        BorderThickness="1"
+                        Padding="14 7"
+                        FontFamily="Fonts/#TT Norms"
+                        FontSize="12"
+                        Cursor="Hand"
+                        Margin="0 0 8 0"/>
+                <Button x:Name="RemoveRowBtn"
+                        Content="− Remove Last"
+                        Click="RemoveRow_Click"
+                        Background="#15FFFFFF"
+                        Foreground="White"
+                        BorderBrush="#20FFFFFF"
+                        BorderThickness="1"
+                        Padding="14 7"
+                        FontFamily="Fonts/#TT Norms"
+                        FontSize="12"
+                        Cursor="Hand"
+                        Margin="0 0 16 0"/>
+
+                <!-- Presets -->
+                <TextBlock Text="PRESET:"
+                           Foreground="#40FFFFFF"
+                           FontFamily="Fonts/#TT Norms"
+                           FontSize="10"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           Margin="0 0 8 0"/>
+                <ComboBox x:Name="PresetCombo"
+                          Background="#15FFFFFF"
+                          Foreground="White"
+                          BorderBrush="#20FFFFFF"
+                          FontFamily="Fonts/#TT Norms"
+                          FontSize="12"
+                          Width="140"
+                          Margin="0 0 8 0">
+                    <ComboBoxItem>Alternating</ComboBoxItem>
+                    <ComboBoxItem>Slow Pulse</ComboBoxItem>
+                    <ComboBoxItem>Double Flash</ComboBoxItem>
+                    <ComboBoxItem>Steady On</ComboBoxItem>
+                    <ComboBoxItem>Rapid Burst</ComboBoxItem>
+                </ComboBox>
+                <Button Content="Apply to Selected"
+                        Click="ApplyPreset_Click"
+                        Background="#15FFFFFF"
+                        Foreground="White"
+                        BorderBrush="#20FFFFFF"
+                        BorderThickness="1"
+                        Padding="14 7"
+                        FontFamily="Fonts/#TT Norms"
+                        FontSize="12"
+                        Cursor="Hand"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="Generate XML"
+                        Click="Generate_Click"
+                        Background="#C0132A"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Padding="16 7"
+                        FontFamily="Fonts/#TT Norms"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Cursor="Hand"
+                        Margin="0 0 8 0"/>
+                <Button x:Name="CopyBtn"
+                        Content="Copy"
+                        Click="Copy_Click"
+                        Background="#15FFFFFF"
+                        Foreground="White"
+                        BorderBrush="#20FFFFFF"
+                        BorderThickness="1"
+                        Padding="14 7"
+                        FontFamily="Fonts/#TT Norms"
+                        FontSize="12"
+                        Cursor="Hand"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Main sequencer + output split -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="320"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Sequencer grid -->
+            <Border Grid.Column="0"
+                    CornerRadius="10"
+                    BorderThickness="1"
+                    BorderBrush="#15FFFFFF"
+                    Background="#0CFFFFFF">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Auto"
+                              Padding="16">
+                    <StackPanel>
+
+                        <!-- Beat marker header -->
+                        <Grid Margin="90 0 0 4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ItemsControl>
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.Items>
+                                    <TextBlock Text="|" Foreground="#20FFFFFF" FontFamily="Consolas" FontSize="10" Width="80"/>
+                                    <TextBlock Text="|" Foreground="#20FFFFFF" FontFamily="Consolas" FontSize="10" Width="80"/>
+                                    <TextBlock Text="|" Foreground="#20FFFFFF" FontFamily="Consolas" FontSize="10" Width="80"/>
+                                    <TextBlock Text="|" Foreground="#20FFFFFF" FontFamily="Consolas" FontSize="10" Width="80"/>
+                                </ItemsControl.Items>
+                            </ItemsControl>
+                        </Grid>
+
+                        <!-- Siren rows -->
+                        <ItemsControl x:Name="SirenRowsList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0 2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="80"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Row label (click to select) -->
+                                        <Button Grid.Column="0"
+                                                Content="{Binding LightName}"
+                                                Click="RowLabel_Click"
+                                                Tag="{Binding}"
+                                                Background="Transparent"
+                                                Foreground="#C0FFFFFF"
+                                                BorderThickness="0"
+                                                HorizontalContentAlignment="Left"
+                                                FontFamily="Fonts/#TT Norms"
+                                                FontSize="11"
+                                                Cursor="Hand"
+                                                Padding="0"/>
+
+                                        <!-- Tick cells -->
+                                        <ItemsControl Grid.Column="1" ItemsSource="{Binding Ticks}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <ToggleButton Style="{StaticResource TickStyle}"
+                                                                  IsChecked="{Binding IsOn, Mode=TwoWay}"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <!-- Live bitmask value -->
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding SequenceDisplay}"
+                                                   Foreground="#40FFFFFF"
+                                                   FontFamily="Consolas"
+                                                   FontSize="10"
+                                                   VerticalAlignment="Center"
+                                                   Margin="8 0 0 0"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- XML output panel -->
+            <Border Grid.Column="2"
+                    CornerRadius="10"
+                    BorderThickness="1"
+                    BorderBrush="#15FFFFFF"
+                    Background="#080808">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="GENERATED XML"
+                               Foreground="#40FFFFFF"
+                               FontFamily="Fonts/#TT Norms"
+                               FontSize="10"
+                               FontWeight="Bold"
+                               Margin="14 12 14 8"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  Margin="14 0 14 14">
+                        <TextBox x:Name="XmlOutput"
+                                 Background="Transparent"
+                                 Foreground="#4CFF70"
+                                 BorderThickness="0"
+                                 FontFamily="Consolas"
+                                 FontSize="10"
+                                 IsReadOnly="True"
+                                 TextWrapping="NoWrap"
+                                 AcceptsReturn="True"
+                                 Text="// Click 'Generate XML' to build your carcols.meta snippet."/>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- Status bar -->
+        <TextBlock x:Name="StatusText"
+                   Grid.Row="2"
+                   Text="Select a row label then apply a preset, or click individual tick cells to draw your pattern."
+                   Foreground="#30FFFFFF"
+                   FontFamily="Fonts/#TT Norms"
+                   FontSize="11"
+                   Margin="0 10 0 0"/>
+    </Grid>
+</UserControl>

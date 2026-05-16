@@ -7,12 +7,15 @@ namespace ToolKitV
     public partial class MainWindow : Window
     {
         // Pre-instantiate views so state is preserved when switching tabs
-        private readonly TextureOptimization _textureView  = new();
-        private readonly VehicleTools        _vehicleView  = new();
-        private readonly AssetAnalyzer       _assetView    = new();
-        private readonly ModelViewer         _modelView    = new();
-        private readonly ClothingTools       _clothingView = new();
-        private readonly AudioViewer         _audioView    = new();
+        private readonly TextureOptimization _textureView      = new();
+        private readonly VehicleTools        _vehicleView      = new();
+        private readonly AssetAnalyzer       _assetView        = new();
+        private readonly ModelViewer         _modelView        = new();
+        private readonly ClothingTools       _clothingView     = new();
+        private readonly AudioViewer         _audioView        = new();
+        private readonly YtdSplitter         _ytdSplitView     = new();
+        private readonly ServerLinter        _serverLinterView = new();
+        private readonly SirenBuilder        _sirenBuilderView = new();
 
         public MainWindow()
         {
@@ -57,6 +60,21 @@ namespace ToolKitV
                 case "AudioViewer":
                     MainContent.Content  = _audioView;
                     AppSubtitle.Text     = "  AWC Audio Previewer";
+                    break;
+
+                case "YtdSplitter":
+                    MainContent.Content  = _ytdSplitView;
+                    AppSubtitle.Text     = "  YTD Texture Splitter";
+                    break;
+
+                case "ServerLinter":
+                    MainContent.Content  = _serverLinterView;
+                    AppSubtitle.Text     = "  Server Linter";
+                    break;
+
+                case "SirenBuilder":
+                    MainContent.Content  = _sirenBuilderView;
+                    AppSubtitle.Text     = "  Visual Siren Builder";
                     break;
             }
         }
