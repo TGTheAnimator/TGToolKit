@@ -56,6 +56,7 @@ namespace ToolKitV.Views
             _serverLinterRef = linter;
         }
 
+        [System.Runtime.Versioning.SupportedOSPlatform("windows6.1")]
         private void btnScan_Click(object sender, RoutedEventArgs e)
         {
             using var fbd = new WinForms.FolderBrowserDialog
@@ -138,11 +139,6 @@ namespace ToolKitV.Views
                 // Grab the active provider from the Linter
                 if (_serverLinterRef.IsSftpMode())
                 {
-                    int fallback = 22;
-                    // Note: We're reusing the parsing logic. Assuming SftpHost is bound or we can access it.
-                    // For simplicity, we just ask the Linter to create the provider, but since those are private, 
-                    // we'll just parse it here. Or better, we can expose a GetActiveProvider() on Linter.
-                    // Let's assume we can get it from the linter.
                     fs = _serverLinterRef.GetConfiguredProvider();
                 }
                 else

@@ -65,7 +65,7 @@ namespace ToolKitV.Views
             }
         }
 
-        private void EconomyGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        private void EconomyGrid_CellEditEnding(object? sender, DataGridCellEditEndingEventArgs e)
         {
             if (e.EditAction == DataGridEditAction.Commit)
             {

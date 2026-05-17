@@ -21,13 +21,15 @@ namespace ToolKitV
         private readonly ItemImporter        _itemImporterView = new();
         private readonly SqlMatrix           _sqlMatrixView    = new();
         private readonly EconomyDashboard    _economyView      = new();
-        private readonly GlobalTranspilerView _globalTranspilerView;
+        private readonly GlobalTranspilerView  _globalTranspilerView;
+        private readonly SnapshotManager        _snapshotManagerView;
 
 
         public MainWindow()
         {
             InitializeComponent();
-            _globalTranspilerView = new GlobalTranspilerView(_serverLinterView);
+            _globalTranspilerView  = new GlobalTranspilerView(_serverLinterView);
+            _snapshotManagerView   = new SnapshotManager(_serverLinterView);
 
             // Start on Texture Optimizer
             MainContent.Content = _textureView;
@@ -105,6 +107,11 @@ namespace ToolKitV
                 case "GlobalTranspiler":
                     MainContent.Content  = _globalTranspilerView;
                     AppSubtitle.Text     = "  Global Transpiler Engine";
+                    break;
+
+                case "SnapshotManager":
+                    MainContent.Content  = _snapshotManagerView;
+                    AppSubtitle.Text     = "  Disaster Recovery";
                     break;
 
 

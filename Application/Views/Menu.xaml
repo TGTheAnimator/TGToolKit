@@ -573,6 +573,49 @@
                     </Grid>
                 </Border>
 
+                <!-- ─── Separator: Danger Zone ─── -->
+                <Border Margin="14,8,14,4" Height="1" Background="#20E63946"/>
+                <TextBlock Text="DISASTER RECOVERY" Foreground="#603946" FontFamily="Fonts/#TT Norms"
+                           FontWeight="Bold" FontSize="9" Margin="14,0,0,4"/>
+
+                <!-- Snapshot Manager -->
+                <Border x:Name="SnapshotManagerItem" Style="{StaticResource NavItem}"
+                        MouseLeftButtonDown="SnapshotManager_Click">
+                    <Grid>
+                        <Border x:Name="SnapshotManagerBg" CornerRadius="8" Visibility="Collapsed">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#32E63946" Offset="0"/>
+                                    <GradientStop Color="#18E63946" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border x:Name="SnapshotManagerInactiveBg" CornerRadius="8" Background="Transparent"/>
+                        <Rectangle x:Name="SnapshotManagerStripe" Width="3" HorizontalAlignment="Left"
+                                   RadiusX="2" RadiusY="2" Visibility="Collapsed">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#FF6060" Offset="0"/>
+                                    <GradientStop Color="#E63946" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                            <Rectangle.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#E63946" Opacity="0.8"/>
+                            </Rectangle.Effect>
+                        </Rectangle>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14 0 0 0">
+                            <Border Width="22" Height="22" CornerRadius="5" Background="#18FFFFFF"
+                                    VerticalAlignment="Center" Margin="0 0 10 0">
+                                <TextBlock Text="⏪" FontFamily="Segoe UI Emoji" Foreground="#FF6060" FontSize="11"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="SnapshotManagerLabel" Text="Disaster Recovery"
+                                       Foreground="#A0FFFFFF" FontFamily="Fonts/#TT Norms"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
             </StackPanel>
         </ScrollViewer>
 
@@ -607,7 +650,7 @@
                             BorderBrush="#25C0132A" BorderThickness="1"
                             Padding="5 2">
                         <TextBlock x:Name="VersionText"
-                                   Text="v3.4.1"
+                                   Text="v3.5.0"
                                    Foreground="#60C0132A"
                                    FontFamily="Fonts/#TT Norms"
                                    FontSize="9"

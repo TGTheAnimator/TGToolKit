@@ -79,7 +79,7 @@ namespace ToolKitV.Models.Providers
         {
             return Task.Run(() =>
             {
-                string dir = Path.GetDirectoryName(remoteFilePath);
+                string? dir = Path.GetDirectoryName(remoteFilePath);
                 if (dir != null) Directory.CreateDirectory(dir);
                 File.Copy(localFilePath, remoteFilePath, true);
             });

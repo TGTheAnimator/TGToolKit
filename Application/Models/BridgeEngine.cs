@@ -25,7 +25,7 @@ namespace ToolKitV.Models
             return string.Join(@"\s*", escapedTokens);
         }
 
-        public static bool ApplyPatch(ref string fileText, FilePatch patch, LogWriter log)
+        public static bool ApplyPatch(ref string fileText, FilePatch patch, LogWriter? log)
         {
             try
             {
@@ -59,7 +59,7 @@ namespace ToolKitV.Models
             }
             catch (Exception ex)
             {
-                log.LogWrite($"[CRITICAL] Regex error while attempting to patch {patch.TargetFilePath}: {ex.Message}");
+                log?.LogWrite($"[CRITICAL] Regex error while attempting to patch {patch.TargetFilePath}: {ex.Message}");
                 return false;
             }
         }

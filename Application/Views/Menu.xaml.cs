@@ -157,6 +157,13 @@ namespace ToolKitV.Views
             NavigateTo?.Invoke("GlobalTranspiler");
         }
 
+        private void SnapshotManager_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (_activeView == "SnapshotManager") return;
+            SetActiveItem("SnapshotManager");
+            NavigateTo?.Invoke("SnapshotManager");
+        }
+
         public void InvokeNavigateTo(string view)
         {
             if (_activeView == view) return;
@@ -290,6 +297,16 @@ namespace ToolKitV.Views
             GlobalTranspilerStripe.Visibility     = globalTranspilerActive ? Visibility.Visible   : Visibility.Collapsed;
             GlobalTranspilerLabel.FontWeight      = globalTranspilerActive ? FontWeights.Bold     : FontWeights.Normal;
             GlobalTranspilerLabel.Foreground      = globalTranspilerActive
+                ? new SolidColorBrush(Colors.White)
+                : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
+
+            // Snapshot Manager item
+            bool snapshotManagerActive = view == "SnapshotManager";
+            SnapshotManagerBg.Visibility         = snapshotManagerActive ? Visibility.Visible   : Visibility.Collapsed;
+            SnapshotManagerInactiveBg.Visibility = snapshotManagerActive ? Visibility.Collapsed : Visibility.Visible;
+            SnapshotManagerStripe.Visibility     = snapshotManagerActive ? Visibility.Visible   : Visibility.Collapsed;
+            SnapshotManagerLabel.FontWeight      = snapshotManagerActive ? FontWeights.Bold     : FontWeights.Normal;
+            SnapshotManagerLabel.Foreground      = snapshotManagerActive
                 ? new SolidColorBrush(Colors.White)
                 : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
 
