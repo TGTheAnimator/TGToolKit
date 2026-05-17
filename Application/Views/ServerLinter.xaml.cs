@@ -17,12 +17,17 @@ namespace ToolKitV.Views
             public string ResourceName { get; set; } = string.Empty;
             public string Message      { get; set; } = string.Empty;
             public Brush  SeverityColor { get; set; } = Brushes.White;
+            public string Signature    { get; set; } = string.Empty;
+            public bool   IsFixable    { get; set; } = false;
+            public Models.ServerLinter.LinterWarning RawWarning { get; set; } = null!;
         }
 
         private bool _isSftp = false;
         private Models.ServerLinter.LinterResult? _lastResult;
         private string _lastScannedDirectory = string.Empty;
         private List<IntegrationRecipe> _applicableRecipes = new();
+        private LinterIgnoreManager? _ignoreManager;
+        public ObservableCollection<IssueViewModel> _observableIssues = new();
 
         /// <summary>
         /// Sanitises the raw host string the user typed into the SFTP Host field.
@@ -183,6 +188,8 @@ namespace ToolKitV.Views
                 var progress = new Progress<int>(n =>
                     Dispatcher.Invoke(() =>
                         ScanStatusText.Text = $"Analysing… {n} resource{(n == 1 ? "" : "s")} scanned"));
+
+                _ignoreManager = new LinterIgnoreManager(_lastScannedDirectory);
                 var log = new LogWriter("=== Server Linter started ===");
 
                 Models.ServerLinter.LinterResult result =
@@ -200,9 +207,13 @@ namespace ToolKitV.Views
                 }
                 else
                 {
-                    var vms = new List<IssueViewModel>();
+                    _observableIssues.Clear();
                     foreach (var w in result.Warnings)
                     {
+                        // Filter ignores
+                        if (_ignoreManager != null && _ignoreManager.IsIgnored(w.ResourceName, w.Message))
+                            continue;
+
                         var color = w.Severity switch
                         {
                             Models.ServerLinter.Severity.Critical => new SolidColorBrush(Color.FromRgb(0xFF, 0x55, 0x55)),
@@ -210,15 +221,25 @@ namespace ToolKitV.Views
                             _                                      => new SolidColorBrush(Color.FromRgb(0x55, 0xAA, 0xFF))
                         };
 
-                        vms.Add(new IssueViewModel
+                        _observableIssues.Add(new IssueViewModel
                         {
                             ResourceName  = w.ResourceName,
                             Message       = w.Message,
-                            SeverityColor = color
+                            SeverityColor = color,
+                            Signature     = w.Message,
+                            IsFixable     = w.Message.Contains("fxmanifest.lua") || w.Message.Contains("Stream conflict"),
+                            RawWarning    = w
                         });
                     }
 
-                    IssuesList.ItemsSource = vms;
+                    if (_observableIssues.Count == 0)
+                    {
+                        CleanCard.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        IssuesList.ItemsSource = _observableIssues;
+                    }
                 }
 
                 // Store result so FixAll can act on it
@@ -657,6 +678,152 @@ namespace ToolKitV.Views
             {
                 provider?.Disconnect();
                 ScanningCard.Visibility = Visibility.Collapsed;
+            }
+        private async void btnIgnore_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is IssueViewModel issue)
+            {
+                if (_ignoreManager != null)
+                {
+                    await _ignoreManager.IgnoreIssueAsync(issue.ResourceName, issue.Signature, global: false);
+                    _observableIssues.Remove(issue);
+                    if (_observableIssues.Count == 0)
+                        CleanCard.Visibility = Visibility.Visible;
+                }
+            }
+        }
+
+        private async void btnIgnoreAll_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is IssueViewModel issue)
+            {
+                if (_ignoreManager != null)
+                {
+                    await _ignoreManager.IgnoreIssueAsync(issue.ResourceName, issue.Signature, global: true);
+                    
+                    var toRemove = _observableIssues.Where(i => i.Signature == issue.Signature).ToList();
+                    foreach (var rm in toRemove)
+                        _observableIssues.Remove(rm);
+
+                    if (_observableIssues.Count == 0)
+                        CleanCard.Visibility = Visibility.Visible;
+                }
+            }
+        }
+
+        private async void btnFix_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is IssueViewModel issue)
+            {
+                if (issue.Signature.Contains("Stream conflict"))
+                {
+                    var resources = issue.ResourceName.Split(',').Select(r => r.Trim()).ToList();
+                    StreamConflictDesc.Text = issue.Message;
+                    StreamConflictList.ItemsSource = resources;
+                    StreamConflictOverlay.Visibility = Visibility.Visible;
+                }
+                else if (issue.Signature.Contains("fxmanifest.lua") || issue.Signature.Contains("__resource.lua") || issue.Signature.Contains("game declaration"))
+                {
+                    // For manifest issues, we run the dedicated auto-fixer pipeline
+                    ScanStatusText.Text = "Running Auto-Fixer for Manifests...";
+                    ScanningCard.Visibility = Visibility.Visible;
+                    
+                    IFileSystemProvider? provider = null;
+                    try
+                    {
+                        string targetPath = _isSftp ? SftpRootPath.TextValue : _lastScannedDirectory;
+
+                        if (_isSftp)
+                        {
+                            int fallback = int.TryParse(SftpPort.Value, out int pf) ? pf : 22;
+                            var (h, p) = ParseSftpHost(SftpHost.TextValue, fallback);
+                            provider = new SftpFileSystemProvider(h, p, SftpUsername.TextValue, SftpPassword.Password);
+                        }
+                        else
+                        {
+                            provider = new LocalFileSystemProvider();
+                        }
+                        
+                        var log = new LogWriter("=== Targeted Auto-Fix ===");
+                        await LinterAutoFixer.FixManifestErrorsAsync(provider, targetPath, log);
+                        
+                        MessageBox.Show("Manifest fixes applied successfully! Re-scanning...", "Fix Applied", MessageBoxButton.OK, MessageBoxImage.Information);
+                        RunLintButton_Click(this, new RoutedEventArgs());
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error applying fix: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        ScanningCard.Visibility = Visibility.Collapsed;
+                    }
+                    finally
+                    {
+                        provider?.Disconnect();
+                    }
+                }
+            }
+        }
+
+        private void CancelStreamConflictButton_Click(object sender, RoutedEventArgs e)
+        {
+            StreamConflictOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private async void KeepStreamResourceButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string winningResource)
+            {
+                StreamConflictOverlay.Visibility = Visibility.Collapsed;
+                
+                string desc = StreamConflictDesc.Text;
+                var match = Regex.Match(desc, @"'([^']+)'");
+                if (!match.Success) return;
+                
+                string conflictingFile = match.Groups[1].Value;
+                var allResources = StreamConflictList.ItemsSource as List<string>;
+                if (allResources == null) return;
+
+                var losingResources = allResources.Where(r => r != winningResource).ToList();
+
+                IFileSystemProvider? provider = null;
+                try
+                {
+                    string targetPath = _isSftp ? SftpRootPath.TextValue : _lastScannedDirectory;
+
+                    if (_isSftp)
+                    {
+                        int fallback = int.TryParse(SftpPort.Value, out int pf) ? pf : 22;
+                        var (h, p) = ParseSftpHost(SftpHost.TextValue, fallback);
+                        provider = new SftpFileSystemProvider(h, p, SftpUsername.TextValue, SftpPassword.Password);
+                    }
+                    else
+                    {
+                        provider = new LocalFileSystemProvider();
+                    }
+
+                    foreach (var loser in losingResources)
+                    {
+                        string loserRoot = targetPath.TrimEnd('/', '\\') + "/" + loser;
+                        if (!_isSftp) loserRoot = System.IO.Path.Combine(targetPath, loser);
+
+                        var files = await provider.DiscoverFilesAsync(loserRoot, conflictingFile);
+                        foreach (var f in files)
+                        {
+                            await provider.DeleteFileAsync(f);
+                        }
+                    }
+                    
+                    MessageBox.Show($"Conflict resolved! Kept '{winningResource}' and deleted '{conflictingFile}' from others.", "Resolved", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    RunLintButton_Click(this, new RoutedEventArgs());
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show($"Error resolving conflict:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                finally
+                {
+                    provider?.Disconnect();
+                }
             }
         }
     }

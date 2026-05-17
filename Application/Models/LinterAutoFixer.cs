@@ -398,12 +398,25 @@ namespace ToolKitV.Models
                     try
                     {
                         string text = await fs.ReadAllTextAsync(manifestPath);
-                        bool usesOxLib  = text.Contains("lib.print") || text.Contains("lib.registerContext") ||
-                                          text.Contains("lib.callback") || text.Contains("lib.notify");
+                        string norm = manifestPath.Replace('\\', '/');
+                        string resourceDir = norm.Substring(0, norm.LastIndexOf('/'));
+                        
+                        var luaFiles = await fs.DiscoverFilesAsync(resourceDir, "*.lua");
+                        bool usesOxLib = false;
+                        foreach (var f in luaFiles)
+                        {
+                            if (f.Replace('\\', '/') == norm) continue; // skip manifest
+                            string luaContent = await fs.ReadAllTextAsync(f);
+                            if (luaContent.Contains("lib.") || luaContent.Contains("ox_lib"))
+                            {
+                                usesOxLib = true;
+                                break;
+                            }
+                        }
 
                         if (usesOxLib && !text.Contains("@ox_lib"))
                         {
-                            string rn = Path.GetFileName(Path.GetDirectoryName(manifestPath.Replace('\\', '/'))!);
+                            string rn = Path.GetFileName(resourceDir);
                             log?.LogWrite($"[FIX] Injecting @ox_lib/init.lua into {rn}/fxmanifest.lua");
                             await fs.CreateBackupAsync(manifestPath);
                             text += "\n-- [TGToolKit] Injected missing ox_lib dependency\nshared_script '@ox_lib/init.lua'\n";
@@ -597,6 +610,30 @@ namespace ToolKitV.Models
 
                         // Fallback: prepend if the above substitution changed nothing
                         text     = patched.Contains("game 'gta5'") ? patched : "game 'gta5'\n" + text;
+                        modified = true;
+                    }
+
+                    // Missing ox_lib dependency?
+                    string norm = manifest.Replace('\\', '/');
+                    string resourceDir = norm.Substring(0, norm.LastIndexOf('/'));
+                    
+                    var luaFiles = await fs.DiscoverFilesAsync(resourceDir, "*.lua");
+                    bool usesOxLib = false;
+                    foreach (var f in luaFiles)
+                    {
+                        if (f.Replace('\\', '/') == norm) continue; // skip manifest
+                        string luaContent = await fs.ReadAllTextAsync(f);
+                        // Check for ox_lib usage (e.g. lib.print, lib.notify, exports.ox_lib)
+                        if (luaContent.Contains("lib.") || luaContent.Contains("ox_lib"))
+                        {
+                            usesOxLib = true;
+                            break;
+                        }
+                    }
+
+                    if (usesOxLib && !text.Contains("@ox_lib"))
+                    {
+                        text += "\n-- [TGToolKit] Injected missing ox_lib dependency\nshared_script '@ox_lib/init.lua'\n";
                         modified = true;
                     }
 

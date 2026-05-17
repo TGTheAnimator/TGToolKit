@@ -6,6 +6,10 @@
              xmlns:local="clr-namespace:ToolKitV.Views"
              mc:Ignorable="d">
 
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
     <Grid Margin="28 20 28 20">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="380"/>
@@ -544,12 +548,13 @@
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="8"/>
                                                 <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
                                             <Rectangle Grid.Column="0"
                                                        Width="4" RadiusX="2" RadiusY="2"
                                                        Fill="{Binding SeverityColor}"
                                                        Margin="0 0 8 0"/>
-                                            <StackPanel Grid.Column="1">
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding ResourceName}"
                                                            Foreground="#FFB347"
                                                            FontFamily="Fonts/#TT Norms"
@@ -561,6 +566,20 @@
                                                            FontFamily="Fonts/#TT Norms"
                                                            FontSize="11"
                                                            TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
+                                                <Button Content="🔧 Fix" Height="25" Width="50" Background="#222" Foreground="#30E080" 
+                                                        FontFamily="Fonts/#TT Norms" FontSize="11" BorderThickness="0" Margin="0,0,5,0" Cursor="Hand"
+                                                        Visibility="{Binding IsFixable, Converter={StaticResource BoolToVis}}"
+                                                        Click="btnFix_Click" Tag="{Binding}"/>
+
+                                                <Button Content="👁️ Ignore" Height="25" Width="60" Background="#222" Foreground="#888" 
+                                                        FontFamily="Fonts/#TT Norms" FontSize="11" BorderThickness="0" Margin="0,0,5,0" Cursor="Hand"
+                                                        Click="btnIgnore_Click" Tag="{Binding}"/>
+
+                                                <Button Content="👁️ Ignore All" Height="25" Width="70" Background="#222" Foreground="#888" 
+                                                        FontFamily="Fonts/#TT Norms" FontSize="11" BorderThickness="0" Cursor="Hand"
+                                                        Click="btnIgnoreAll_Click" Tag="{Binding}"/>
                                             </StackPanel>
                                         </Grid>
                                     </Border>
@@ -621,5 +640,48 @@
                 </Grid>
             </Border>
         </Grid>
+        
+        <!-- ══ STREAM CONFLICT OVERLAY ══ -->
+        <Grid x:Name="StreamConflictOverlay" Grid.ColumnSpan="3" Background="#D0000000" Visibility="Collapsed" Panel.ZIndex="100">
+            <Border Width="500" Height="300" Background="#111" BorderBrush="#333" BorderThickness="1" CornerRadius="8" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <StackPanel Grid.Row="0" Margin="0,0,0,15">
+                        <TextBlock Text="⚠️ STREAM CONFLICT RESOLVER" Foreground="#E08030" FontFamily="Fonts/#TT Norms" FontWeight="Bold" FontSize="16"/>
+                        <TextBlock x:Name="StreamConflictDesc" Text="The following resources are streaming conflicting files." Foreground="#AAA" FontFamily="Fonts/#TT Norms" FontSize="11" Margin="0,5,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    
+                    <!-- Conflict List -->
+                    <Border Grid.Row="1" Background="#0A0A0A" BorderBrush="#222" BorderThickness="1" CornerRadius="4" Padding="5">
+                        <ItemsControl x:Name="StreamConflictList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#333" BorderThickness="0,0,0,1" Padding="10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding}" Foreground="White" FontFamily="Fonts/#TT Norms" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="1" Content="Keep This Resource" Height="25" Width="120" Background="#C0132A" Foreground="White" FontFamily="Fonts/#TT Norms" FontWeight="Bold" BorderThickness="0" Click="KeepStreamResourceButton_Click" Cursor="Hand" Tag="{Binding}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                    
+                    <Grid Grid.Row="2" Margin="0,15,0,0">
+                        <Button Content="Cancel" Height="35" Width="100" HorizontalAlignment="Left" Background="#222" Foreground="White" FontFamily="Fonts/#TT Norms" BorderThickness="0" Click="CancelStreamConflictButton_Click" Cursor="Hand"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
     </Grid>
 </UserControl>
