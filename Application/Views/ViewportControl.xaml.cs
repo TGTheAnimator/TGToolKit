@@ -6,6 +6,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using ToolKitV.Rendering;
 using ToolKitV.Models.Rendering;
+using SharpDX;
+using Point = System.Windows.Point;
 
 namespace ToolKitV.Views
 {
@@ -44,6 +46,7 @@ namespace ToolKitV.Views
                 _isActive = true;
                 _fpsStopwatch.Start();
                 UpdateSize();
+                UpdateLuaCode();
             }
             catch (Exception ex)
             {
@@ -88,6 +91,8 @@ namespace ToolKitV.Views
         {
             if (_isActive && _renderer != null)
             {
+                // 15% interpolation per frame gives a sharp, modern weight to the camera
+                _renderer.LerpCamera(0.15f);
                 _renderer.Render();
                 UpdateFps();
             }
@@ -109,6 +114,58 @@ namespace ToolKitV.Views
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             base.OnMouseLeftButtonDown(e);
+            if (_renderer == null) return;
+
+            // Grab focus so that keyboard events (like Ctrl+Z and snap keys) route correctly
+            Focus();
+
+            // Place a point on Shift + Left Click
+            if (Keyboard.IsKeyDown(Key.LeftShift))
+            {
+                Point p = e.GetPosition(this);
+                // Multi-DPI Support: Calculate physical pixels
+                var presentationSource = PresentationSource.FromVisual(this);
+                double dpiX = 1.0;
+                double dpiY = 1.0;
+
+                if (presentationSource?.CompositionTarget != null)
+                {
+                    dpiX = presentationSource.CompositionTarget.TransformToDevice.M11;
+                    dpiY = presentationSource.CompositionTarget.TransformToDevice.M22;
+                }
+
+                int pixelX = (int)(p.X * dpiX);
+                int pixelY = (int)(p.Y * dpiY);
+                int screenW = (int)(ActualWidth * dpiX);
+                int screenH = (int)(ActualHeight * dpiY);
+
+                Vector3? hit = null;
+
+                // God-Tier Vertex Snapping: Alt + Shift snaps directly to 3D geometry!
+                if (Keyboard.IsKeyDown(Key.LeftAlt))
+                {
+                    hit = _renderer.GetNearestVertexSnap(pixelX, pixelY, screenW, screenH);
+                }
+                else
+                {
+                    hit = _renderer.GetMouseFloorIntersection(pixelX, pixelY, screenW, screenH);
+                }
+
+                if (hit.HasValue)
+                {
+                    if (_renderer.CurrentZoneType == Renderer.TargetZoneType.BoxZone)
+                    {
+                        _renderer.ZonePoints.Clear(); // BoxZone only allows 1 center point
+                    }
+
+                    _renderer.ZonePoints.Add(hit.Value);
+                    UpdateLuaCode();
+                }
+                return; // Skip camera orbit tracking
+            }
+
+            _renderer.TargetCameraYaw   = _renderer.CameraYaw;
+            _renderer.TargetCameraPitch = _renderer.CameraPitch;
             _isDragging = true;
             _lastMousePos = e.GetPosition(this);
             CaptureMouse();
@@ -124,6 +181,18 @@ namespace ToolKitV.Views
         protected override void OnMouseRightButtonDown(MouseButtonEventArgs e)
         {
             base.OnMouseRightButtonDown(e);
+            if (_renderer == null) return;
+
+            // Clear the zone on Shift + Right Click
+            if (Keyboard.IsKeyDown(Key.LeftShift))
+            {
+                _renderer.ZonePoints.Clear();
+                UpdateLuaCode();
+                return; // Skip panning tracking
+            }
+
+            _renderer.TargetPanX = _renderer.PanX;
+            _renderer.TargetPanY = _renderer.PanY;
             _isPanning = true;
             _lastMousePos = e.GetPosition(this);
             CaptureMouse();
@@ -147,20 +216,19 @@ namespace ToolKitV.Views
 
             if (_isDragging)
             {
-                // Orbit — sensitivity scales down so large models don't spin too fast
+                // Orbit — update target variables, NOT the actual camera directly
                 float sens = 0.005f;
-                _renderer.CameraYaw   += dx * sens;
-                _renderer.CameraPitch += dy * sens;
-                _renderer.CameraPitch = Math.Clamp(_renderer.CameraPitch,
-                    -(float)Math.PI / 2.1f, (float)Math.PI / 2.1f);
+                _renderer.TargetCameraYaw   -= dx * sens;
+                _renderer.TargetCameraPitch -= dy * sens;
+                // No Pitch clamps! Allow free 360-degree matrix-driven free-look rotation!
             }
 
             if (_isPanning)
             {
-                // Pan — scale by model radius so panning feels consistent across model sizes
-                float panScale = _renderer.CameraDistance * 0.001f;
-                _renderer.PanX -= dx * panScale;
-                _renderer.PanY += dy * panScale;
+                // Pan — scale by target distance so panning feels consistent across zoom levels
+                float panScale = _renderer.TargetCameraDistance * 0.001f;
+                _renderer.TargetPanX -= dx * panScale;
+                _renderer.TargetPanY += dy * panScale;
             }
 
             _lastMousePos = pos;
@@ -171,9 +239,9 @@ namespace ToolKitV.Views
             base.OnMouseWheel(e);
             if (_renderer != null)
             {
-                // Zoom proportional to current distance — feels smooth near and far
+                // Zoom target camera distance proportionally
                 float zoomFactor = 1f - (e.Delta / 1200f);
-                _renderer.CameraDistance = Math.Max(0.1f, _renderer.CameraDistance * zoomFactor);
+                _renderer.TargetCameraDistance = Math.Max(0.1f, _renderer.TargetCameraDistance * zoomFactor);
             }
         }
 
@@ -206,6 +274,124 @@ namespace ToolKitV.Views
                 ViewportImage.Source = null;
                 _renderer.Dispose();
                 _renderer = null;
+            }
+        }
+
+        private void ZoneMode_Changed(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (_renderer == null || sldWidth == null) return;
+
+            bool isBox = rbBoxZone.IsChecked == true;
+            _renderer.CurrentZoneType = isBox ? Renderer.TargetZoneType.BoxZone : Renderer.TargetZoneType.PolyZone;
+            _renderer.ZonePoints.Clear(); // Reset points when switching modes
+
+            // Toggle Box UI Elements
+            var vis = isBox ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+            lblWidth.Visibility = sldWidth.Visibility = valWidth.Visibility = vis;
+            lblLength.Visibility = sldLength.Visibility = valLength.Visibility = vis;
+            lblHeading.Visibility = sldHeading.Visibility = valHeading.Visibility = vis;
+
+            UpdateLuaCode();
+        }
+
+        private void UI_ZoneParamChanged(object sender, System.Windows.RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (_renderer == null) return;
+
+            // Push UI values to the DirectX renderer
+            _renderer.ZoneHeight = (float)sldHeight.Value;
+            _renderer.BoxWidth = (float)sldWidth.Value;
+            _renderer.BoxLength = (float)sldLength.Value;
+            _renderer.BoxHeading = (float)sldHeading.Value;
+
+            UpdateLuaCode();
+        }
+
+        private void UpdateLuaCode()
+        {
+            if (_renderer == null) return;
+
+            if (_renderer.ZonePoints.Count == 0)
+            {
+                txtLuaOutput.Text = "-- Shift+Click to place a zone.";
+                return;
+            }
+
+            var sb = new System.Text.StringBuilder();
+
+            if (_renderer.CurrentZoneType == Renderer.TargetZoneType.BoxZone)
+            {
+                var c = _renderer.ZonePoints[0];
+                // In DirectX: Y is vertical UP axis, X and Z are horizontal
+                // ox_target BoxZone coordinates in GTA V space (which is Z-Up):
+                //   GTA V X = DirectX X
+                //   GTA V Y = DirectX Z
+                //   GTA V Z = DirectX Y (adjusted by height/2 so it sits in the middle of the box)
+                float centerZ = c.Y + (_renderer.ZoneHeight / 2f);
+
+                sb.AppendLine("exports.ox_target:addBoxZone({");
+                sb.AppendLine($"    coords = vec3({c.X:F2}, {c.Z:F2}, {centerZ:F2}),");
+                sb.AppendLine($"    size = vec3({_renderer.BoxWidth:F2}, {_renderer.BoxLength:F2}, {_renderer.ZoneHeight:F2}),");
+                sb.AppendLine($"    rotation = {_renderer.BoxHeading:F0},");
+                sb.AppendLine("    debug = true,");
+                sb.AppendLine("    options = {");
+                sb.AppendLine("        {");
+                sb.AppendLine("            name = 'box_zone',");
+                sb.AppendLine("            event = 'my:event',");
+                sb.AppendLine("            icon = 'fa-solid fa-box',");
+                sb.AppendLine("            label = 'Interact',");
+                sb.AppendLine("        }");
+                sb.AppendLine("    }");
+                sb.AppendLine("})");
+            }
+            else
+            {
+                sb.AppendLine("exports.ox_target:addPolyZone({");
+                sb.AppendLine("    points = {");
+                foreach (var pt in _renderer.ZonePoints)
+                {
+                    // DirectX -> GTA V/FiveM coordinates conversion:
+                    //   GTA V X = DirectX X
+                    //   GTA V Y = DirectX Z
+                    //   GTA V Z = DirectX Y
+                    sb.AppendLine($"        vec3({pt.X:F2}, {pt.Z:F2}, {pt.Y:F2}),");
+                }
+                sb.AppendLine("    },");
+                sb.AppendLine($"    thickness = {_renderer.ZoneHeight:F2},");
+                sb.AppendLine("    debug = true,");
+                sb.AppendLine("    options = {");
+                sb.AppendLine("        {");
+                sb.AppendLine("            name = 'poly_zone',");
+                sb.AppendLine("            event = 'my:event',");
+                sb.AppendLine("            icon = 'fa-solid fa-draw-polygon',");
+                sb.AppendLine("            label = 'Interact',");
+                sb.AppendLine("        }");
+                sb.AppendLine("    }");
+                sb.AppendLine("})");
+            }
+
+            txtLuaOutput.Text = sb.ToString();
+        }
+
+        private void btnCopyCode_Click(object sender, RoutedEventArgs e)
+        {
+            Clipboard.SetText(txtLuaOutput.Text);
+        }
+
+        protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+
+            // Catch Ctrl + Z to undo the last clicked point
+            if (e.Key == System.Windows.Input.Key.Z && 
+                (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) == System.Windows.Input.ModifierKeys.Control)
+            {
+                if (_renderer != null && _renderer.ZonePoints.Count > 0)
+                {
+                    _renderer.ZonePoints.RemoveAt(_renderer.ZonePoints.Count - 1);
+                    UpdateLuaCode(); 
+                    e.Handled = true;
+                }
             }
         }
     }

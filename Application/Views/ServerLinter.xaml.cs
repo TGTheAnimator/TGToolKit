@@ -23,6 +23,45 @@ namespace ToolKitV.Views
         private Models.ServerLinter.LinterResult? _lastResult;
         private string _lastScannedDirectory = string.Empty;
 
+        /// <summary>
+        /// Sanitises the raw host string the user typed into the SFTP Host field.
+        /// Handles all common copy-paste formats from hosting panels:
+        ///   "sftp://hostname:2022"  → ("hostname", 2022)
+        ///   "hostname:2022"         → ("hostname", 2022)
+        ///   "hostname"              → ("hostname", fallbackPort)
+        /// </summary>
+        private static (string host, int port) ParseSftpHost(string raw, int fallbackPort)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                return (string.Empty, fallbackPort);
+
+            // Strip any URI scheme prefix (sftp://, ssh://, ftp://, etc.)
+            string cleaned = raw.Trim();
+            foreach (var scheme in new[] { "sftp://", "ssh://", "ftp://", "http://", "https://" })
+            {
+                if (cleaned.StartsWith(scheme, StringComparison.OrdinalIgnoreCase))
+                {
+                    cleaned = cleaned[scheme.Length..];
+                    break;
+                }
+            }
+
+            // Strip trailing path (e.g. "hostname:2022/home")
+            int slashIdx = cleaned.IndexOf('/');
+            if (slashIdx >= 0) cleaned = cleaned[..slashIdx];
+
+            // Extract embedded port  ("hostname:2022")
+            int colonIdx = cleaned.LastIndexOf(':');
+            if (colonIdx >= 0 && int.TryParse(cleaned[(colonIdx + 1)..], out int embeddedPort))
+                return (cleaned[..colonIdx].Trim(), embeddedPort);
+
+            return (cleaned.Trim(), fallbackPort);
+        }
+
+        public string GetSftpPassword() => SftpPassword?.Password ?? string.Empty;
+        public bool IsSftpMode() => _isSftp;
+        public string GetLocalFolder() => LocalFolder?.Path ?? string.Empty;
+
         public ServerLinter()
         {
             InitializeComponent();
@@ -87,6 +126,8 @@ namespace ToolKitV.Views
         {
             RunLintButton.IsButtonEnabledValue = false;
             CleanCard.Visibility               = Visibility.Collapsed;
+            ScanningCard.Visibility            = Visibility.Visible;
+            ScanStatusText.Text                = _isSftp ? "Connecting to SFTP server…" : "Initialising scan…";
             IssuesList.ItemsSource             = null;
             ResultScanned.Text                 = "…";
             ResultIssues.Text                  = "…";
@@ -103,26 +144,34 @@ namespace ToolKitV.Views
                 {
                     provider = new LocalManifestProvider();
                     rootPath = LocalFolder.Path;
-                    _lastScannedDirectory = rootPath; // Store for Auto-Wirer
+                    _lastScannedDirectory = rootPath;
+                    ScanStatusText.Text   = "Scanning local resources…";
                 }
                 else
                 {
-                    if (!int.TryParse(SftpPort.Value, out int port)) port = 22;
+                    int fallbackLint = int.TryParse(SftpPort.Value, out int pfL) ? pfL : 22;
+                    var (hLint, pLint) = ParseSftpHost(SftpHost.TextValue, fallbackLint);
 
+                    ScanStatusText.Text = "Connecting to SFTP and downloading manifests…";
                     provider = new SftpManifestProvider(
-                        SftpHost.TextValue,
-                        port,
+                        hLint, pLint,
                         SftpUsername.TextValue,
                         SftpPassword.Password);
 
-                    rootPath = SftpRootPath.TextValue;
+                    rootPath              = SftpRootPath.TextValue;
+                    _lastScannedDirectory = rootPath;  // store so Auto-Wire has a valid target
+                    ScanStatusText.Text   = "Scanning remote resources…";
                 }
 
-                var progress = new Progress<int>();
-                var log      = new LogWriter("=== Server Linter started ===");
+                var progress = new Progress<int>(n =>
+                    Dispatcher.Invoke(() =>
+                        ScanStatusText.Text = $"Analysing… {n} resource{(n == 1 ? "" : "s")} scanned"));
+                var log = new LogWriter("=== Server Linter started ===");
 
                 Models.ServerLinter.LinterResult result =
                     await Models.ServerLinter.RunLinterAsync(provider, rootPath, progress, log);
+
+                ScanningCard.Visibility = Visibility.Collapsed;
 
                 ResultScanned.Text  = result.ResourcesScanned.ToString();
                 ResultIssues.Text   = result.ResourcesWithIssues.ToString();
@@ -189,8 +238,9 @@ namespace ToolKitV.Views
 
                             if (_isSftp)
                             {
-                                if (!int.TryParse(SftpPort.Value, out int p)) p = 22;
-                                fs2 = new SftpFileSystemProvider(SftpHost.TextValue, p,
+                                int fallback2 = int.TryParse(SftpPort.Value, out int pf2) ? pf2 : 22;
+                                var (h2, p2)  = ParseSftpHost(SftpHost.TextValue, fallback2);
+                                fs2 = new SftpFileSystemProvider(h2, p2,
                                     SftpUsername.TextValue, SftpPassword.Password);
                             }
                             else
@@ -224,24 +274,26 @@ namespace ToolKitV.Views
                     }
                 }
 
-                // Reveal Fix All button only in local mode when deprecated manifests were found
+                // Fix All (local-only deprecated manifest converter)
                 FixAllButton.Visibility =
                     (!_isSftp && result.DeprecatedManifestPaths.Count > 0)
                         ? Visibility.Visible
                         : Visibility.Collapsed;
 
-                // Auto-Wire is available after any local scan (it analyses the full ecosystem)
-                AutoWireButton.Visibility        = !_isSftp ? Visibility.Visible : Visibility.Collapsed;
-                // Restore Backups appears whenever there is a valid target path
-                RestoreBackupsButton.Visibility  = Visibility.Visible;
+                // Auto-Fix Manifests, Auto-Wire, and Restore available after ANY scan — local OR SFTP
+                FixManifestsButton.Visibility   = Visibility.Visible;
+                AutoWireButton.Visibility       = Visibility.Visible;
+                RestoreBackupsButton.Visibility = Visibility.Visible;
             }
             catch (Exception ex)
             {
+                ScanningCard.Visibility = Visibility.Collapsed;
                 MessageBox.Show($"Linter error:\n{ex.Message}", "Server Linter Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
+                ScanningCard.Visibility            = Visibility.Collapsed;
                 RunLintButton.IsButtonEnabledValue = true;
             }
         }
@@ -279,6 +331,74 @@ namespace ToolKitV.Views
             if (remaining == 0)
                 FixAllButton.Visibility = Visibility.Collapsed;
         }
+        private async void FixManifestsButton_Click(object sender, RoutedEventArgs e)
+        {
+            string targetPath = _isSftp ? SftpRootPath.TextValue : _lastScannedDirectory;
+            if (string.IsNullOrWhiteSpace(targetPath))
+            {
+                MessageBox.Show("No scan path available. Run a scan first.", "Auto-Fix Manifests",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            string modeLabel = _isSftp ? $"SFTP ({SftpHost.TextValue})" : "Local Disk";
+
+            var confirm = MessageBox.Show(
+                $"TGToolKit will perform a two-sweep manifest fix across your server.\n\n" +
+                $"  • Mode: {modeLabel}\n" +
+                "  • Sweep 1 — Convert all __resource.lua → fxmanifest.lua\n" +
+                "  • Sweep 2 — Inject missing fx_version / game headers\n\n" +
+                "⚠️ All modified files receive a .tg_backup before changes are applied.\n" +
+                "Continue?",
+                "TGToolKit — Auto-Fix Manifests",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (confirm != MessageBoxResult.Yes) return;
+
+            FixManifestsButton.IsEnabled       = false;
+            AutoWireButton.IsEnabled           = false;
+            RunLintButton.IsButtonEnabledValue = false;
+
+            IFileSystemProvider? fs = null;
+            try
+            {
+                var log = new LogWriter("=== User Initiated Manifest Fix ===");
+
+                if (_isSftp)
+                {
+                    int fallbackMf = int.TryParse(SftpPort.Value, out int pfMf) ? pfMf : 22;
+                    var (hMf, pMf) = ParseSftpHost(SftpHost.TextValue, fallbackMf);
+                    fs = new SftpFileSystemProvider(hMf, pMf,
+                        SftpUsername.TextValue, SftpPassword.Password);
+                }
+                else
+                {
+                    fs = new LocalFileSystemProvider();
+                }
+
+                int fixesCount = await LinterAutoFixer.FixManifestErrorsAsync(fs, targetPath, log);
+
+                MessageBox.Show(
+                    $"Auto-Fix Manifests complete: {fixesCount} file(s) fixed via {modeLabel}.\n\n" +
+                    "Backups (.tg_backup) created beside every modified file.\n" +
+                    "Re-run the Linter to verify the changes.",
+                    "TGToolKit — Auto-Fix Manifests Complete",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Auto-Fix Manifests error:\n{ex.Message}", "Manifest Fix Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                fs?.Disconnect();
+                FixManifestsButton.IsEnabled       = true;
+                AutoWireButton.IsEnabled           = true;
+                RunLintButton.IsButtonEnabledValue = true;
+            }
+        }
+
         private async void AutoWireButton_Click(object sender, RoutedEventArgs e)
         {
             if (_lastResult == null)
@@ -325,12 +445,10 @@ namespace ToolKitV.Views
                 // Construct the right provider for this mode
                 if (_isSftp)
                 {
-                    if (!int.TryParse(SftpPort.Value, out int port)) port = 22;
-                    fs = new SftpFileSystemProvider(
-                        SftpHost.TextValue,
-                        port,
-                        SftpUsername.TextValue,
-                        SftpPassword.Password);
+                    int fallbackAw = int.TryParse(SftpPort.Value, out int pfAw) ? pfAw : 22;
+                    var (hAw, pAw) = ParseSftpHost(SftpHost.TextValue, fallbackAw);
+                    fs = new SftpFileSystemProvider(hAw, pAw,
+                        SftpUsername.TextValue, SftpPassword.Password);
                 }
                 else
                 {
@@ -393,8 +511,9 @@ namespace ToolKitV.Views
 
                 if (_isSftp)
                 {
-                    if (!int.TryParse(SftpPort.Value, out int p)) p = 22;
-                    fs = new SftpFileSystemProvider(SftpHost.TextValue, p,
+                    int fallbackRb = int.TryParse(SftpPort.Value, out int pfRb) ? pfRb : 22;
+                    var (hRb, pRb) = ParseSftpHost(SftpHost.TextValue, fallbackRb);
+                    fs = new SftpFileSystemProvider(hRb, pRb,
                         SftpUsername.TextValue, SftpPassword.Password);
                 }
                 else

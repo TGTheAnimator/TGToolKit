@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Input;
 using ToolKitV.Views;
+using ToolKitV.Models.Providers;
 
 namespace ToolKitV
 {
@@ -16,6 +17,9 @@ namespace ToolKitV
         private readonly YtdSplitter         _ytdSplitView     = new();
         private readonly ServerLinter        _serverLinterView = new();
         private readonly SirenBuilder        _sirenBuilderView = new();
+        private readonly SqlMatrix           _sqlMatrixView    = new();
+        private readonly EconomyDashboard    _economyView      = new();
+        private readonly NuiSandbox          _nuiSandboxView   = new();
 
         public MainWindow()
         {
@@ -27,6 +31,8 @@ namespace ToolKitV
             // Wire up menu navigation
             SideMenu.NavigateTo += OnNavigateTo;
         }
+
+        public string GetSftpPassword() => _serverLinterView.GetSftpPassword();
 
         private void OnNavigateTo(string view)
         {
@@ -75,6 +81,39 @@ namespace ToolKitV
                 case "SirenBuilder":
                     MainContent.Content  = _sirenBuilderView;
                     AppSubtitle.Text     = "  Visual Siren Builder";
+                    break;
+
+                case "SqlMatrix":
+                    MainContent.Content  = _sqlMatrixView;
+                    AppSubtitle.Text     = "  SQL Migration Matrix";
+                    _sqlMatrixView.UpdateSftpInfo();
+                    break;
+
+                case "NuiSandbox":
+                    MainContent.Content  = _nuiSandboxView;
+                    AppSubtitle.Text     = "  NUI Sandbox Studio";
+                    break;
+
+                case "Economy":
+                    MainContent.Content  = _economyView;
+                    AppSubtitle.Text     = "  Economy & Loot Balancer";
+                    
+                    IFileSystemProvider fsProvider;
+                    string rootPath;
+                    
+                    if (_serverLinterView.IsSftpMode())
+                    {
+                        var cfg = ToolKitV.Models.LinterConfig.Load();
+                        fsProvider = new SftpFileSystemProvider(cfg.Host, cfg.Port, cfg.Username, _serverLinterView.GetSftpPassword());
+                        rootPath = cfg.RootPath;
+                    }
+                    else
+                    {
+                        fsProvider = new LocalFileSystemProvider();
+                        rootPath = _serverLinterView.GetLocalFolder();
+                    }
+                    
+                    _economyView.InitializeDashboard(fsProvider, rootPath);
                     break;
             }
         }

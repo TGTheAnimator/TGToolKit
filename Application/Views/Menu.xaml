@@ -129,6 +129,44 @@
                     </Grid>
                 </Border>
 
+                <!-- Economy Balancer -->
+                <Border x:Name="EconomyItem" Style="{StaticResource NavItem}"
+                        MouseLeftButtonDown="Economy_Click">
+                    <Grid>
+                        <Border x:Name="EconomyBg" CornerRadius="8" Visibility="Collapsed">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#32C0132A" Offset="0"/>
+                                    <GradientStop Color="#18C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border x:Name="EconomyInactiveBg" CornerRadius="8" Background="Transparent"/>
+                        <Rectangle x:Name="EconomyStripe" Width="3" HorizontalAlignment="Left"
+                                   RadiusX="2" RadiusY="2" Visibility="Collapsed">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#FF4040" Offset="0"/>
+                                    <GradientStop Color="#C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                            <Rectangle.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#C0132A" Opacity="0.8"/>
+                            </Rectangle.Effect>
+                        </Rectangle>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14 0 0 0">
+                            <Border Width="22" Height="22" CornerRadius="5" Background="#18FFFFFF"
+                                    VerticalAlignment="Center" Margin="0 0 10 0">
+                                <TextBlock Text="&#xE7C9;" FontFamily="Segoe MDL2 Assets" Foreground="#FFD6A5" FontSize="11"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="EconomyLabel" Text="Economy Balancer"
+                                       Foreground="#A0FFFFFF" FontFamily="Fonts/#TT Norms"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
                 <!-- Asset Analyzer -->
                 <Border x:Name="AssetAnalyzerItem" Style="{StaticResource NavItem}"
                         MouseLeftButtonDown="AssetAnalyzer_Click">
@@ -303,6 +341,44 @@
                 </Rectangle>
                 <TextBlock Style="{StaticResource SectionLabel}" Text="ADVANCED"/>
 
+                <!-- NUI Sandbox -->
+                <Border x:Name="NuiSandboxItem" Style="{StaticResource NavItem}"
+                        MouseLeftButtonDown="NuiSandbox_Click">
+                    <Grid>
+                        <Border x:Name="NuiSandboxBg" CornerRadius="8" Visibility="Collapsed">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#32C0132A" Offset="0"/>
+                                    <GradientStop Color="#18C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border x:Name="NuiSandboxInactiveBg" CornerRadius="8" Background="Transparent"/>
+                        <Rectangle x:Name="NuiSandboxStripe" Width="3" HorizontalAlignment="Left"
+                                   RadiusX="2" RadiusY="2" Visibility="Collapsed">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#FF4040" Offset="0"/>
+                                    <GradientStop Color="#C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                            <Rectangle.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#C0132A" Opacity="0.8"/>
+                            </Rectangle.Effect>
+                        </Rectangle>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14 0 0 0">
+                            <Border Width="22" Height="22" CornerRadius="5" Background="#18FFFFFF"
+                                    VerticalAlignment="Center" Margin="0 0 10 0">
+                                <TextBlock Text="&#xE81E;" FontFamily="Segoe MDL2 Assets" Foreground="#A0A0FF" FontSize="11"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="NuiSandboxLabel" Text="NUI Sandbox Studio"
+                                       Foreground="#A0FFFFFF" FontFamily="Fonts/#TT Norms"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
                 <!-- YTD Splitter -->
                 <Border x:Name="YtdSplitterItem" Style="{StaticResource NavItem}"
                         MouseLeftButtonDown="YtdSplitter_Click">
@@ -373,6 +449,44 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock x:Name="ServerLinterLabel" Text="Server Linter"
+                                       Foreground="#A0FFFFFF" FontFamily="Fonts/#TT Norms"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- SQL Matrix -->
+                <Border x:Name="SqlMatrixItem" Style="{StaticResource NavItem}"
+                        MouseLeftButtonDown="SqlMatrix_Click">
+                    <Grid>
+                        <Border x:Name="SqlMatrixBg" CornerRadius="8" Visibility="Collapsed">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#32C0132A" Offset="0"/>
+                                    <GradientStop Color="#18C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border x:Name="SqlMatrixInactiveBg" CornerRadius="8" Background="Transparent"/>
+                        <Rectangle x:Name="SqlMatrixStripe" Width="3" HorizontalAlignment="Left"
+                                   RadiusX="2" RadiusY="2" Visibility="Collapsed">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#FF4040" Offset="0"/>
+                                    <GradientStop Color="#C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                            <Rectangle.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#C0132A" Opacity="0.8"/>
+                            </Rectangle.Effect>
+                        </Rectangle>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14 0 0 0">
+                            <Border Width="22" Height="22" CornerRadius="5" Background="#18FFFFFF"
+                                    VerticalAlignment="Center" Margin="0 0 10 0">
+                                <TextBlock Text="&#xE9A1;" FontFamily="Segoe MDL2 Assets" Foreground="#A0FFA0" FontSize="11"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="SqlMatrixLabel" Text="SQL Matrix"
                                        Foreground="#A0FFFFFF" FontFamily="Fonts/#TT Norms"
                                        FontSize="12" VerticalAlignment="Center"/>
                         </StackPanel>

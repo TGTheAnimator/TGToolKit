@@ -5,6 +5,8 @@ using System.Windows.Threading;
 using System.Threading;
 using System.Threading.Tasks;
 using ToolKitV.Views;
+using CefSharp;
+using CefSharp.Wpf;
 
 namespace ToolKitV
 {
@@ -20,6 +22,24 @@ namespace ToolKitV
 
         protected override async void OnStartup(StartupEventArgs e)
         {
+            var settings = new CefSettings();
+            // Forces the cache to a local temp folder so it doesn't clutter the user's install directory
+            settings.CachePath = Path.Combine(Path.GetTempPath(), "TGToolKit_CefCache");
+            // Enable DevTools so developers can hit F12 to inspect their React/Vue elements
+            settings.RemoteDebuggingPort = 8088;
+            // Explicitly resolve the CefSharp browser subprocess so it is never null in a
+            // folder-based self-contained publish (was crashing with "Value cannot be null (path1)")
+            var appDir = AppDomain.CurrentDomain.BaseDirectory;
+            var subprocessPath = Path.Combine(appDir, "CefSharp.BrowserSubprocess.exe");
+            if (File.Exists(subprocessPath))
+                settings.BrowserSubprocessPath = subprocessPath;
+
+            // Initialize the Chromium Engine
+            if (Cef.IsInitialized == false)
+            {
+                Cef.Initialize(settings, performDependencyCheck: false, browserProcessHandler: null);
+            }
+
             // Single-instance guard — prevent running TGToolKit more than once at a time.
             Mutex = new Mutex(true, "TGToolKit_SingleInstance", out _ownsMutex);
 

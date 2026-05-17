@@ -65,64 +65,196 @@ namespace ToolKitV.Models
             int fixesApplied = 0;
             log?.LogWrite("=== Starting Auto-Wirer (provider-abstracted) ===");
 
-            // ── 1. Ecosystem detection ────────────────────────────────────────────────
-            string activeFramework = installedResources.Contains("qbx_core")    ? "qbox"       :
-                                     installedResources.Contains("qb-core")     ? "qb"         :
-                                     installedResources.Contains("es_extended") ? "esx"        : "standalone";
+            // ── 1. OMNI-ECOSYSTEM DETECTION ──────────────────────────────────────────
+
+            // ── Core ─────────────────────────────────────────────────────────────────
+            string activeFramework = installedResources.Contains("qbx_core")    ? "qbox"      :
+                                     installedResources.Contains("qb-core")     ? "qb"        :
+                                     installedResources.Contains("es_extended") ? "esx"       : "standalone";
 
             string activeInventory = installedResources.Contains("ox_inventory")  ? "ox"      :
                                      installedResources.Contains("qs-inventory")  ? "quasar"  :
-                                     installedResources.Contains("jpr-inventory") ? "jpr"     :
-                                     installedResources.Contains("ps-inventory")  ? "ps"      : "qb";
+                                     installedResources.Contains("ps-inventory")  ? "ps"      :
+                                     installedResources.Contains("jpr-inventory") ? "jpr"     : "qb";
 
             string activeTarget    = installedResources.Contains("ox_target")  ? "ox_target" :
                                      installedResources.Contains("qb-target")  ? "qb-target" : "none";
 
+            string activeUI        = installedResources.Contains("lation_ui")     ? "lation"  :
+                                     installedResources.Contains("okokNotify")    ? "okok"    :
+                                     installedResources.Contains("mythic_notify") ? "mythic"  :
+                                     installedResources.Contains("ox_lib")        ? "ox"      : "qb";
+
+            // ── Communications ───────────────────────────────────────────────────────
             string activePhone     = installedResources.Contains("jpr-phonesystem") ? "jpr-phonesystem" :
                                      installedResources.Contains("lb-phone")        ? "lb-phone"        :
                                      installedResources.Contains("qs-smartphone")   ? "qs-smartphone"   :
                                      installedResources.Contains("renewed-phone")   ? "renewed-phone"   : "qb-phone";
 
-            string activeNotify    = installedResources.Contains("lation_ui")    ? "lation"  :
-                                     installedResources.Contains("okokNotify")   ? "okok"    :
-                                     installedResources.Contains("mythic_notify")? "mythic"  :
-                                     installedResources.Contains("ox_lib")       ? "ox"      : "qb";
+            string activeRadio     = installedResources.Contains("pma-voice") ? "pma" : "mumble";
 
-            log?.LogWrite($"[ECOSYSTEM] Framework={activeFramework} | Inventory={activeInventory} | Target={activeTarget} | Phone={activePhone} | UI={activeNotify}");
+            // ── Justice & Medical ─────────────────────────────────────────────────────
+            string activeDispatch  = installedResources.Contains("ps-dispatch")  ? "ps-dispatch"  :
+                                     installedResources.Contains("qs-dispatch")  ? "qs-dispatch"  :
+                                     installedResources.Contains("cd_dispatch")  ? "cd-dispatch"  : "qb-core";
 
-            // ── 2. server.cfg convar injections (local only — SFTP path uses remote root) ─
-            string sep           = serverRootPath.Contains('/') ? "/" : "\\";
-            string serverCfgPath = serverRootPath.TrimEnd('/', '\\') + sep + "server.cfg";
+            string activeMDT       = installedResources.Contains("xd_mdt")         ? "xd"      :
+                                     installedResources.Contains("jpr-mdtsystem")  ? "jpr"     :
+                                     installedResources.Contains("ps-mdt")         ? "ps"      :
+                                     installedResources.Contains("redutzu-mdt")    ? "redutzu" : "none";
 
+            string activeBilling   = installedResources.Contains("okokBilling")     ? "okok"    :
+                                     installedResources.Contains("xd_billing")      ? "xd"      :
+                                     installedResources.Contains("renewed-banking") ? "renewed" : "qb-phone";
+
+            // ── Vehicles & World ──────────────────────────────────────────────────────
+            string activeFuel      = installedResources.Contains("ox_fuel")    ? "ox"     :
+                                     installedResources.Contains("ps-fuel")    ? "ps"     :
+                                     installedResources.Contains("LegacyFuel") ? "legacy" : "none";
+
+            string activeKeys      = installedResources.Contains("jpr-keys")       ? "jpr"            :
+                                     installedResources.Contains("qs-vehiclekeys") ? "quasar"         :
+                                     installedResources.Contains("wasabi_carlock") ? "wasabi"         : "qb-vehiclekeys";
+
+            string activeWeather   = installedResources.Contains("cd_easytime")    ? "cd_easytime"    :
+                                     installedResources.Contains("qb-weathersync") ? "qb-weathersync" :
+                                     installedResources.Contains("vSync")          ? "vSync"          : "none";
+
+            // ── Utilities ─────────────────────────────────────────────────────────────
+            string activeMinigame  = installedResources.Contains("ps-ui")        ? "ps-ui" :
+                                     installedResources.Contains("xd_minigames") ? "xd"    : "none";
+
+            log?.LogWrite($"[OMNI-ECOSYSTEM] Fw:{activeFramework} | Inv:{activeInventory} | Tgt:{activeTarget} | UI:{activeUI} | Ph:{activePhone}");
+            log?.LogWrite($"[OMNI-ECOSYSTEM] Disp:{activeDispatch} | MDT:{activeMDT} | Bill:{activeBilling} | Fuel:{activeFuel} | Keys:{activeKeys} | Wx:{activeWeather}");
+
+            // ── 2. SERVER.CFG MASTER ENGINE (SFTP-Safe) ──────────────────────────────
+            // server.cfg lives ONE directory ABOVE the resources folder.
+            // e.g.  /home/container/resources  →  /home/container/server.cfg
+            // Using pure string ops (no Path.Combine / System.IO) so it works over SFTP.
             try
             {
-                string cfgText  = await fs.ReadAllTextAsync(serverCfgPath);
-                bool cfgChanged = false;
+                string resourcesNorm = serverRootPath.TrimEnd('/', '\\').Replace('\\', '/');
+                string serverRoot    = resourcesNorm.Contains('/')
+                    ? resourcesNorm.Substring(0, resourcesNorm.LastIndexOf('/'))
+                    : "/";
+                if (string.IsNullOrWhiteSpace(serverRoot)) serverRoot = "/";
 
-                if (installedResources.Contains("pma-voice") && !cfgText.Contains("voice_useNativeAudio"))
+                string serverCfgPath = serverRoot + "/server.cfg";
+
+                // Probe: DiscoverFilesAsync("server.cfg") in the parent dir to confirm it exists
+                var cfgProbe = await fs.DiscoverFilesAsync(serverRoot, "server.cfg");
+
+                if (cfgProbe.Count > 0)
                 {
-                    log?.LogWrite("[FIX] Injecting pma-voice convars into server.cfg");
-                    cfgText = "setr voice_useNativeAudio true\nsetr voice_use3dAudio true\nsetr voice_defaultCycle \"GRAVE\"\n\n" + cfgText;
-                    cfgText = Regex.Replace(cfgText, @"(?m)^(\s*(?:ensure|start)\s+mumble-voip\s*)$",
-                        "# [TGToolKit] Auto-disabled: conflicts with pma-voice\n# $1", RegexOptions.IgnoreCase);
-                    cfgChanged = true;
+                    string cfgText    = await fs.ReadAllTextAsync(serverCfgPath);
+                    bool   cfgChanged = false;
+
+                    log?.LogWrite($"[CFG] Found server.cfg at {serverCfgPath}. Analysing...");
+
+                    // ── Fix 1: Game Build Enforcement ────────────────────────────────────
+                    // Modern DLC scripts fatal-crash if sv_enforceGameBuild is missing or too low.
+                    if (!Regex.IsMatch(cfgText, @"(?i)sv_enforceGameBuild"))
+                    {
+                        log?.LogWrite("[FIX] Injecting sv_enforceGameBuild 3258 (Bottom Dollar Bounties) into server.cfg.");
+                        cfgText   = "set sv_enforceGameBuild 3258\n" + cfgText;
+                        cfgChanged = true;
+                    }
+
+                    // ── Fix 2: OneSync Enforcement ───────────────────────────────────────
+                    // Required by ox_target routing buckets and modern resource systems.
+                    if (!Regex.IsMatch(cfgText, @"(?i)set\s+onesync\s+(on|legacy|1)"))
+                    {
+                        log?.LogWrite("[FIX] Injecting 'set onesync on' into server.cfg.");
+                        cfgText   = "set onesync on\n" + cfgText;
+                        cfgChanged = true;
+                    }
+
+                    // ── Fix 3: pma-voice convars ─────────────────────────────────────────
+                    if (installedResources.Contains("pma-voice") &&
+                        !Regex.IsMatch(cfgText, @"(?i)voice_useNativeAudio"))
+                    {
+                        log?.LogWrite("[FIX] Injecting pma-voice optimal convars into server.cfg.");
+                        string voiceBlock =
+                            "\n# TGToolKit: Auto-Wired Voice Settings\n" +
+                            "setr voice_useNativeAudio true\n"            +
+                            "setr voice_use3dAudio true\n"                +
+                            "setr voice_defaultCycle \"GRAVE\"\n";
+                        cfgText   = voiceBlock + cfgText;
+                        cfgChanged = true;
+
+                        // Mute conflicting mumble-voip ensures
+                        cfgText = Regex.Replace(cfgText,
+                            @"(?mi)^(\s*(?:ensure|start)\s+mumble-voip\s*)$",
+                            "# [TGToolKit] Auto-disabled: conflicts with pma-voice\n# $1");
+                    }
+
+                    // ── Fix 4: oxmysql connection string ────────────────────────────────
+                    if (installedResources.Contains("oxmysql") &&
+                        !Regex.IsMatch(cfgText, @"(?i)mysql_connection_string"))
+                    {
+                        log?.LogWrite("[FIX] Injecting missing oxmysql connection string template.");
+                        cfgText   = "# [TGToolKit] Configure your DB credentials below:\n" +
+                                    "set mysql_connection_string \"mysql://root:password@localhost/fivem?charset=utf8mb4\"\n" +
+                                    cfgText;
+                        cfgChanged = true;
+                    }
+
+                    // ── Fix 5: God-Tier Core Load Order Re-Wire ──────────────────────────
+                    // Finds core lib ensures anywhere in the file, comments out their old
+                    // position, and forces them to the top of the resource boot block.
+                    string[] coreLibs = { "oxmysql", "ox_lib", "lation_core", "wasabi_bridge", "jpr-libs", "xd_lib" };
+                    string   topBlock = "\n# TGToolKit: Core Load Order Enforcement\n";
+                    bool     reordered = false;
+
+                    foreach (string lib in coreLibs)
+                    {
+                        if (!installedResources.Contains(lib)) continue;
+
+                        string libPattern = $@"(?mi)^((?:ensure|start)\s+{Regex.Escape(lib)}\s*)$";
+                        if (!Regex.IsMatch(cfgText, libPattern)) continue;
+
+                        // Comment out old position, queue for top block
+                        cfgText    = Regex.Replace(cfgText, libPattern,
+                            $"# [TGToolKit] Auto-moved to top: $1");
+                        topBlock  += $"ensure {lib}\n";
+                        reordered  = true;
+                        log?.LogWrite($"[ORDER] Hoisted '{lib}' to top of boot order.");
+                    }
+
+                    if (reordered)
+                    {
+                        // Anchor: insert the block right after the last injected convar header
+                        // (sv_enforceGameBuild or onesync), falling back to file head.
+                        string anchored = Regex.Replace(cfgText,
+                            @"(set onesync on\r?\n|set sv_enforceGameBuild \d+\r?\n)",
+                            "$1" + topBlock,
+                            RegexOptions.None,
+                            TimeSpan.FromSeconds(2));
+
+                        cfgText    = cfgText.Contains(topBlock) ? cfgText : anchored.Contains(topBlock) ? anchored : topBlock + cfgText;
+                        cfgChanged  = true;
+                        log?.LogWrite("[ORDER] Core dependency load order re-wired successfully.");
+                    }
+
+                    // ── Commit ───────────────────────────────────────────────────────────
+                    if (cfgChanged)
+                    {
+                        await fs.CreateBackupAsync(serverCfgPath);
+                        await fs.WriteAllTextAsync(serverCfgPath, cfgText);
+                        fixesApplied++;
+                        log?.LogWrite($"[SUCCESS] Advanced server.cfg auto-wiring complete at {serverCfgPath}");
+                    }
                 }
-
-                if (installedResources.Contains("oxmysql") && !cfgText.Contains("mysql_connection_string"))
+                else
                 {
-                    log?.LogWrite("[FIX] Injecting oxmysql connection string template into server.cfg");
-                    cfgText = "# [TGToolKit] Configure DB credentials:\nset mysql_connection_string \"mysql://root:password@localhost/fivem?charset=utf8mb4\"\n\n" + cfgText;
-                    cfgChanged = true;
-                }
-
-                if (cfgChanged)
-                {
-                    await fs.CreateBackupAsync(serverCfgPath);
-                    await fs.WriteAllTextAsync(serverCfgPath, cfgText);
-                    fixesApplied++;
+                    log?.LogWrite($"[WARNING] server.cfg not found under '{serverRoot}'. " +
+                                  "Skipping config injections — Lua files will still be processed.");
                 }
             }
-            catch { /* server.cfg may not exist at this path — not fatal */ }
+            catch (Exception cfgEx)
+            {
+                log?.LogWrite($"[ERROR] server.cfg engine encountered a fatal error: {cfgEx.Message}");
+            }
 
             // ── 3. Universal fuzzy config re-routing ─────────────────────────────────
             var allManifests = await fs.DiscoverFilesAsync(serverRootPath, "fxmanifest.lua");
@@ -133,6 +265,42 @@ namespace ToolKitV.Models
                 string normalised   = manifestPath.Replace('\\', '/');
                 string resourceDir  = normalised.Substring(0, normalised.LastIndexOf('/'));
                 string resourceName = resourceDir.Substring(resourceDir.LastIndexOf('/') + 1);
+
+                // ── 2b. Inject missing fx_version / game into EXISTING fxmanifest.lua ───
+                // This addresses the "128 issues" where scripts have fxmanifest.lua files
+                // but are missing the mandatory FiveM header declarations.
+                try
+                {
+                    string manifestText    = await fs.ReadAllTextAsync(normalised);
+                    bool   manifestChanged = false;
+
+                    if (!Regex.IsMatch(manifestText, @"fx_version\s+['""]"))
+                    {
+                        manifestText   = "fx_version 'cerulean'\n" + manifestText;
+                        manifestChanged = true;
+                        log?.LogWrite($"[FIX] Injected fx_version into {resourceName}/fxmanifest.lua");
+                    }
+
+                    if (!Regex.IsMatch(manifestText, @"game\s+['""]"))
+                    {
+                        manifestText = Regex.Replace(manifestText,
+                            @"(fx_version\s+['""][^'""]*['""][\r\n]*)",
+                            "$1game 'gta5'\n");
+                        manifestChanged = true;
+                        log?.LogWrite($"[FIX] Injected game declaration into {resourceName}/fxmanifest.lua");
+                    }
+
+                    if (manifestChanged)
+                    {
+                        await fs.CreateBackupAsync(normalised);
+                        await fs.WriteAllTextAsync(normalised, manifestText);
+                        fixesApplied++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log?.LogWrite($"[ERROR] Headers fix failed for {resourceName}/fxmanifest.lua: {ex.Message}");
+                }
 
                 var allLua = await fs.DiscoverFilesAsync(resourceDir, "*.lua");
 
@@ -150,25 +318,57 @@ namespace ToolKitV.Models
                     try
                     {
                         string luaText  = await fs.ReadAllTextAsync(luaPath);
-                        bool   modified = false;
 
-                        // Universal routing
+                        // ── OMNI-INJECTOR: route every ecosystem variable ──────────────────
+                        bool modified = false;
+
+                        // Core Bridges
                         modified |= TryInjectConfig(ref luaText, "Framework",    activeFramework);
                         modified |= TryInjectConfig(ref luaText, "Core",         activeFramework);
                         modified |= TryInjectConfig(ref luaText, "Inventory",    activeInventory);
                         modified |= TryInjectConfig(ref luaText, "Target",       activeTarget);
-                        modified |= TryInjectConfig(ref luaText, "Phone",        activePhone);
-                        modified |= TryInjectConfig(ref luaText, "Notify",       activeNotify);
-                        modified |= TryInjectConfig(ref luaText, "Notification", activeNotify);
-                        modified |= TryInjectConfig(ref luaText, "UI",           activeNotify);
+                        modified |= TryInjectConfig(ref luaText, "TargetSystem", activeTarget);
 
+                        // UI & Notifications
+                        modified |= TryInjectConfig(ref luaText, "UI",           activeUI);
+                        modified |= TryInjectConfig(ref luaText, "Notify",       activeUI);
+                        modified |= TryInjectConfig(ref luaText, "Notification", activeUI);
+                        modified |= TryInjectConfig(ref luaText, "ProgressBar",  activeUI);
+                        modified |= TryInjectConfig(ref luaText, "Minigame",     activeMinigame);
+                        modified |= TryInjectConfig(ref luaText, "Skillbar",     activeMinigame);
+
+                        // Communications
+                        modified |= TryInjectConfig(ref luaText, "Phone",        activePhone);
+                        modified |= TryInjectConfig(ref luaText, "Radio",        activeRadio);
+                        modified |= TryInjectConfig(ref luaText, "Voice",        activeRadio);
+
+                        // Justice & Economy
+                        modified |= TryInjectConfig(ref luaText, "Dispatch",       activeDispatch);
+                        modified |= TryInjectConfig(ref luaText, "DispatchSystem", activeDispatch);
+                        modified |= TryInjectConfig(ref luaText, "MDT",           activeMDT);
+                        modified |= TryInjectConfig(ref luaText, "Billing",       activeBilling);
+                        modified |= TryInjectConfig(ref luaText, "Invoices",      activeBilling);
+                        modified |= TryInjectConfig(ref luaText, "Banking",       activeBilling);
+
+                        // Vehicles
+                        modified |= TryInjectConfig(ref luaText, "Fuel",        activeFuel);
+                        modified |= TryInjectConfig(ref luaText, "FuelSystem",   activeFuel);
+                        modified |= TryInjectConfig(ref luaText, "Keys",         activeKeys);
+                        modified |= TryInjectConfig(ref luaText, "VehicleKeys",  activeKeys);
+
+                        // Weather
+                        modified |= TryInjectConfig(ref luaText, "Weather",     activeWeather);
+                        modified |= TryInjectConfig(ref luaText, "WeatherSync",  activeWeather);
+
+                        // Databases
                         if (installedResources.Contains("oxmysql"))
                         {
                             modified |= TryInjectConfig(ref luaText, "Database", "oxmysql");
                             modified |= TryInjectConfig(ref luaText, "Mysql",    "oxmysql");
+                            modified |= TryInjectConfig(ref luaText, "SQL",      "oxmysql");
                         }
 
-                        // Qbox-specific pass: unlock native code paths in modern scripts
+                        // Qbox native code-path unlock
                         if (activeFramework == "qbox")
                         {
                             modified |= TryInjectConfig(ref luaText, "Framework", "qbx");
@@ -183,7 +383,10 @@ namespace ToolKitV.Models
                             log?.LogWrite($"[WIRED] {resourceName}/{Path.GetFileName(luaPath)}");
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        log?.LogWrite($"[ERROR] Config wire failed for {resourceName}: {ex.Message}");
+                    }
                 }
             }
 
@@ -208,7 +411,11 @@ namespace ToolKitV.Models
                             fixesApplied++;
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        string rn2 = manifestPath.Replace('\\', '/').Split('/')[^2];
+                        log?.LogWrite($"[ERROR] ox_lib injection failed for {rn2}: {ex.Message}");
+                    }
                 }
             }
 
@@ -297,6 +504,118 @@ namespace ToolKitV.Models
 
             log?.LogWrite($"[AUTO-FIX] Converted {fixedCount}/{results.DeprecatedManifestPaths.Count} manifest(s).");
             return fixedCount;
+        }
+
+        /// <summary>
+        /// Dedicated two-sweep Manifest Auto-Fixer. Completely isolated from the
+        /// Auto-Wirer so SFTP path discovery never gets confused between the two concerns.
+        ///
+        /// Sweep 1 — Converts every <c>__resource.lua</c> found under
+        ///            <paramref name="serverRootPath"/> to a properly-headed
+        ///            <c>fxmanifest.lua</c> and deletes the old file.
+        ///
+        /// Sweep 2 — Scans every <c>fxmanifest.lua</c> and injects a canonical
+        ///            <c>fx_version</c> / <c>game</c> header block when missing.
+        ///
+        /// All modified files receive a <c>.tg_backup</c> before changes are applied.
+        /// Works over local disk OR SFTP (provider-abstracted).
+        /// </summary>
+        public static async Task<int> FixManifestErrorsAsync(
+            IFileSystemProvider fs,
+            string              serverRootPath,
+            LogWriter?          log)
+        {
+            int fixesApplied = 0;
+            log?.LogWrite("=== Starting Dedicated Manifest Auto-Fixer ===");
+
+            // ─── SWEEP 1: Convert Legacy __resource.lua files ────────────────────────
+            var legacyManifests = await fs.DiscoverFilesAsync(serverRootPath, "__resource.lua");
+            log?.LogWrite($"[SWEEP 1] Found {legacyManifests.Count} __resource.lua file(s) to convert.");
+
+            foreach (var oldManifest in legacyManifests)
+            {
+                try
+                {
+                    // Safely extract directory using forward slashes (Linux / SFTP safe)
+                    string norm    = oldManifest.Replace('\\', '/');
+                    string dirPath = norm.Substring(0, norm.LastIndexOf('/'));
+                    string newManifestPath = dirPath + "/fxmanifest.lua";
+
+                    string text = await fs.ReadAllTextAsync(oldManifest);
+
+                    // Inject modern headers if missing
+                    if (!text.Contains("fx_version"))
+                        text = "fx_version 'cerulean'\ngame 'gta5'\n\n" + text;
+
+                    // Strip legacy manifest version declaration
+                    text = Regex.Replace(text, @"resource_manifest_version\s+'[^']*'\s*\n?", string.Empty);
+
+                    // Modernise block syntax (normalise whitespace before braces)
+                    text = Regex.Replace(text, @"server_scripts\s*\{",  "server_scripts {");
+                    text = Regex.Replace(text, @"client_scripts\s*\{",  "client_scripts {");
+                    text = Regex.Replace(text, @"shared_scripts\s*\{",  "shared_scripts {");
+                    text = Regex.Replace(text, @"files\s*\{",           "files {");
+
+                    // Write the new file then explicitly delete the old one over SFTP
+                    await fs.WriteAllTextAsync(newManifestPath, text);
+                    await fs.DeleteFileAsync(oldManifest);
+
+                    fixesApplied++;
+                    log?.LogWrite($"[FIXED] Converted {oldManifest} → fxmanifest.lua");
+                }
+                catch (Exception ex)
+                {
+                    log?.LogWrite($"[ERROR] Failed to convert {oldManifest}: {ex.Message}");
+                }
+            }
+
+            // ─── SWEEP 2: Fix existing fxmanifest.lua — inject missing headers ────────
+            var allManifests = await fs.DiscoverFilesAsync(serverRootPath, "fxmanifest.lua");
+            log?.LogWrite($"[SWEEP 2] Found {allManifests.Count} fxmanifest.lua file(s) to inspect.");
+
+            foreach (var manifest in allManifests)
+            {
+                try
+                {
+                    string text     = await fs.ReadAllTextAsync(manifest);
+                    bool   modified = false;
+
+                    // Missing fx_version?
+                    if (!Regex.IsMatch(text, @"fx_version\s+['""]"))
+                    {
+                        text     = "fx_version 'cerulean'\n" + text;
+                        modified = true;
+                    }
+
+                    // Missing game declaration?
+                    if (!Regex.IsMatch(text, @"game\s+['""]"))
+                    {
+                        // Insert right below fx_version when possible
+                        string patched = Regex.Replace(text,
+                            @"(fx_version\s+['""][^'""]*['""][\r\n]*)",
+                            "$1game 'gta5'\n");
+
+                        // Fallback: prepend if the above substitution changed nothing
+                        text     = patched.Contains("game 'gta5'") ? patched : "game 'gta5'\n" + text;
+                        modified = true;
+                    }
+
+                    if (modified)
+                    {
+                        await fs.CreateBackupAsync(manifest);
+                        await fs.WriteAllTextAsync(manifest, text);
+                        fixesApplied++;
+                        log?.LogWrite($"[FIXED] Injected missing headers into {manifest}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log?.LogWrite($"[ERROR] Failed to fix headers in {manifest}: {ex.Message}");
+                }
+            }
+
+            log?.LogWrite($"=== Manifest Auto-Fixer Finished. {fixesApplied} file(s) fixed. ===");
+            return fixesApplied;
         }
 
         // ─── server.cfg Order Validator / Fixer ──────────────────────────────────────
@@ -555,16 +874,42 @@ namespace ToolKitV.Models
 
 
 
+        /// <summary>
+        /// Intelligently replaces configuration string variables using robust Regex.
+        /// Handles all common FiveM config syntaxes:
+        ///   Config.Inventory = 'qb'      — prefixed dot-notation
+        ///   cfg.Phone="lb-phone"          — prefixed, double-quoted
+        ///   Shared = { Inventory = 'ox' } — bare table-key syntax
+        /// Skips values already set correctly, and never overwrites a 'custom' sentinel.
+        /// </summary>
         private static bool TryInjectConfig(ref string text, string variableName, string newValue)
         {
-            string pattern = $@"(?i)((?:Config|cfg|shared|Cfg)\.{variableName}\s*=\s*)(['""])(.*?)(['""])";
-            var match = Regex.Match(text, pattern);
-            if (!match.Success) return false;
+            // Matches all common FiveM config syntaxes:
+            //   Config.Inventory = 'qb'     — prefixed dot-notation, single-quoted
+            //   cfg.Phone="lb-phone"        — prefixed, double-quoted
+            //   Inventory = 'ox'            — bare table-key (inside a Shared table)
+            //
+            // Uses a regular (non-verbatim) string so we can safely include both
+            // ' and " in the character class without verbatim-string quote escaping issues.
+            //
+            // Group 1 — prefix + variable + equals
+            // Group 2 — opening quote
+            // Group 3 — existing value
+            // Group 4 — closing quote
+            string pattern = "(?i)((?:(?:Config|cfg|shared|Cfg)\\." + variableName
+                           + "|\\b" + variableName + "\\b)\\s*=\\s*)(['\"])(.*?)(['\"])";
 
+            if (!Regex.IsMatch(text, pattern)) return false;
+
+            var    match    = Regex.Match(text, pattern);
             string oldValue = match.Groups[3].Value;
-            if (oldValue.Equals(newValue, StringComparison.OrdinalIgnoreCase)) return false;
 
-            text = Regex.Replace(text, pattern, $"$1$2{newValue}$4");
+            // Skip if already correct, or if the owner deliberately set 'custom' as a sentinel
+            if (oldValue.Equals(newValue,  StringComparison.OrdinalIgnoreCase)) return false;
+            if (oldValue.Equals("custom",  StringComparison.OrdinalIgnoreCase)) return false;
+
+            // Swap only the value, preserving the surrounding quote type and whitespace exactly
+            text = Regex.Replace(text, pattern, "$1$2" + newValue + "$4");
             return true;
         }
     }

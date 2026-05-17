@@ -46,6 +46,25 @@ Stops you from booting a broken server.
 - **One-Click Revert:** The "Restore Backups" button finds every `.tg_backup` file under the server root and reverts each original file to its pre-modification state.
 - **Works Over SFTP:** Streams backup content directly from the remote container — no local copies needed.
 
+### 🌐 NUI Sandbox Studio *(New in v3.4.1)*
+- **Embedded Chromium Engine:** A native, hardware-accelerated Chrome instance built straight into the UI.
+- **JS Polyfill Injection:** Automatically intercepts standard `GetParentResourceName()` and `window.fetch()` callbacks. Run your React/Vue UIs locally without crashing!
+- **Payload Interception:** NUI callbacks are securely grabbed and dumped into a raw console text box for instant payload verification.
+
+### 💰 Centralized Economy Balancer *(New in v3.4.1)*
+- **Local Delta-Sync Workspace:** Uses WinSCP bulk stream to clone remote folders into SSD-speed temp directories, and ONLY uploads the modified scripts upon saving.
+- **Lua Brace Surgeon:** Safely parses through thousands of lines of `ox_inventory/items.lua` or `lunar_shops.lua`, replacing targeted prices without syntax corruption.
+- **Unified Master List:** A massive DataGrid sorts buy prices, sell prices, and weights side-by-side. 
+
+### 🗄️ SQL Migration Matrix *(New in v3.4.1)*
+- **Asynchronous Schema Scanning:** Logs into your live MySQL/MariaDB server via MySqlConnector and compares your active schema against every single `.sql` file sitting inside your `[resources]` directory.
+- **One-Click Execute:** Maps out exactly which tables and columns are missing, allowing you to create them automatically to prevent silent script failures.
+
+### 📐 3D PolyZone & Target Builder *(New in v3.4.1)*
+- **Interactive BoxZone & PolyZone:** Spin the camera in 3D space, drag sliders for X/Y and Heading, and automatically generate standard Lua block code.
+- **Volume Extrusion:** Visualizes the actual Z-Height (Cage) of a PolyZone.
+- **Magnetic Vertex Snapping:** Hold ALT+Shift-Click to map raycasts directly to the physical 3D mesh vertices.
+
 ### 🛡️ Server Linter & Dependency Resolver
 - **Remote SFTP Scanning:** Connect directly to your Pterodactyl/RocketNode server to scan manifests instantly over SFTP without downloading gigabytes of `.ytd` files.
 - **95+ Known Integrations:** Expert-level diagnostic advice for JPR, XDope, Lation, JG, Rahe, KQ, Wasabi, and standard FiveM environment resources.

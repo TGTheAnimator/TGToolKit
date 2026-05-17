@@ -49,7 +49,10 @@ namespace ToolKitV.Views
             if (_rows.Count == 0) return;
 
             if (_selectedRow == _rows[^1])
+            {
+                _selectedRow.IsSelected = false;
                 _selectedRow = null;
+            }
 
             _rows.RemoveAt(_rows.Count - 1);
             StatusText.Text = $"Removed last siren row. {_rows.Count} row(s) remaining.";
@@ -59,8 +62,14 @@ namespace ToolKitV.Views
         {
             if (sender is Button btn && btn.Tag is SirenRow row)
             {
-                _selectedRow = row;
-                StatusText.Text = $"Selected: {row.LightName}. Now apply a preset or click ticks manually.";
+                // Deselect previous row
+                if (_selectedRow != null)
+                    _selectedRow.IsSelected = false;
+
+                _selectedRow          = row;
+                _selectedRow.IsSelected = true;
+
+                StatusText.Text = $"✔ Selected: {row.LightName} — now pick a preset and click 'Apply to Selected'.";
             }
         }
 

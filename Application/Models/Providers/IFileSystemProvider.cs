@@ -42,5 +42,11 @@ namespace ToolKitV.Models.Providers
 
         /// <summary>Frees any underlying connection or stream resources.</summary>
         void Disconnect();
+
+        /// <summary>Downloads/clones an entire directory recursively from the source path to a local temp path.</summary>
+        Task DownloadDirectoryAsync(string remotePath, string localTempPath);
+
+        /// <summary>Uploads/writes a single file from a local path to a target path.</summary>
+        Task UploadFileAsync(string localFilePath, string remoteFilePath);
     }
 }

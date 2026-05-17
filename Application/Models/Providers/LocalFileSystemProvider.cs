@@ -60,5 +60,46 @@ namespace ToolKitV.Models.Providers
 
         /// <summary>No-op for local provider — no connection to release.</summary>
         public void Disconnect() { }
+
+        public Task DownloadDirectoryAsync(string remotePath, string localTempPath)
+        {
+            return Task.Run(() =>
+            {
+                string source = remotePath;
+                if (source.EndsWith("\\*") || source.EndsWith("/*"))
+                {
+                    source = source.Substring(0, source.Length - 2);
+                }
+
+                CopyDirectory(source, localTempPath);
+            });
+        }
+
+        public Task UploadFileAsync(string localFilePath, string remoteFilePath)
+        {
+            return Task.Run(() =>
+            {
+                string dir = Path.GetDirectoryName(remoteFilePath);
+                if (dir != null) Directory.CreateDirectory(dir);
+                File.Copy(localFilePath, remoteFilePath, true);
+            });
+        }
+
+        private static void CopyDirectory(string sourceDir, string targetDir)
+        {
+            Directory.CreateDirectory(targetDir);
+
+            foreach (var file in Directory.GetFiles(sourceDir))
+            {
+                string dest = Path.Combine(targetDir, Path.GetFileName(file));
+                File.Copy(file, dest, true);
+            }
+
+            foreach (var subDir in Directory.GetDirectories(sourceDir))
+            {
+                string dest = Path.Combine(targetDir, Path.GetFileName(subDir));
+                CopyDirectory(subDir, dest);
+            }
+        }
     }
 }

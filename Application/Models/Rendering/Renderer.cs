@@ -23,13 +23,24 @@ namespace ToolKitV.Models.Rendering
     // -------------------------------------------------------------------------
     // Constant buffer — 16-byte aligned
     // -------------------------------------------------------------------------
-    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = 112)] // Increased size to 112 bytes
     struct SceneConstants
     {
-        [FieldOffset(0)]  public Matrix  WorldViewProj;
-        [FieldOffset(64)] public Vector3 LightDir;
-        [FieldOffset(76)] public float   HasTexture;
-        [FieldOffset(80)] public Vector4 Ambient;
+        [FieldOffset(0)]   public Matrix  WorldViewProj;
+        [FieldOffset(64)]  public Vector3 LightDir;
+        [FieldOffset(76)]  public float   HasTexture;
+        [FieldOffset(80)]  public Vector4 Ambient;
+        [FieldOffset(96)]  public float   IsGrid;       // <--- NEW
+        [FieldOffset(100)] public Vector3 Padding;
+    }
+
+    // Struct for our Grid vertices so they match the HLSL VS_IN perfectly
+    [StructLayout(LayoutKind.Sequential)]
+    struct GridVertex
+    {
+        public Vector3 Position;
+        public Vector4 Normal;
+        public Vector2 TexCoord;
     }
 
     // -------------------------------------------------------------------------
@@ -43,12 +54,14 @@ namespace ToolKitV.Models.Rendering
         public int          VertexStride;
         public int          IndexCount;
         public string?      TextureName;  // resolved from ShaderGroup.ShaderMapping
+        public List<Vector3> CachedPositions { get; } = new List<Vector3>();
 
         public void Dispose()
         {
             Layout?.Dispose();
             VertexBuffer?.Dispose();
             IndexBuffer?.Dispose();
+            CachedPositions.Clear();
         }
     }
 
@@ -74,8 +87,14 @@ namespace ToolKitV.Models.Rendering
         private PixelShader?    _ps;
         private Buffer?          _cb;
         private SamplerState?    _sampler;
-        private RasterizerState? _rs;
+        private RasterizerState? _rsSolid;      // Upgraded
+        private RasterizerState? _rsWireframe;  // Upgraded
         private byte[]?         _vsBlob;
+
+        // CAD Grid resources
+        private Buffer?      _gridVb;
+        private int          _gridVertexCount;
+        private InputLayout? _gridLayout;
 
         // Texture cache: name → SRV (case-insensitive, matches YTD names)
         private readonly Dictionary<string, ShaderResourceView> _textures
@@ -90,8 +109,76 @@ namespace ToolKitV.Models.Rendering
         public float CameraDistance { get; set; } = 5.0f;
         public float PanX           { get; set; } = 0f;
         public float PanY           { get; set; } = 0f;
+
+        // Target Camera properties (interpolated via LerpCamera)
+        public float TargetCameraYaw      { get; set; } = MathF.PI * 0.25f;
+        public float TargetCameraPitch    { get; set; } = 0.35f;
+        public float TargetCameraDistance { get; set; } = 5.0f;
+        public float TargetPanX           { get; set; } = 0f;
+        public float TargetPanY           { get; set; } = 0f;
+
+        public bool IsWireframeMode { get; set; } = false;
+
+        // A list to hold the points the user clicks for PolyZone building
+        public List<Vector3> ZonePoints { get; } = new List<Vector3>();
+
+        public enum TargetZoneType { PolyZone, BoxZone }
+        public TargetZoneType CurrentZoneType { get; set; } = TargetZoneType.PolyZone;
+        public float ZoneHeight { get; set; } = 2.0f;
+        public float BoxWidth { get; set; } = 1.0f;
+        public float BoxLength { get; set; } = 1.0f;
+        public float BoxHeading { get; set; } = 0.0f; // In degrees
+
         private Vector3 _modelCenter = Vector3.Zero;
         private float   _modelRadius = 1.0f;
+
+        public void LerpCamera(float amount = 0.15f)
+        {
+            CameraYaw      += (TargetCameraYaw      - CameraYaw)      * amount;
+            CameraPitch    += (TargetCameraPitch    - CameraPitch)    * amount;
+            CameraDistance += (TargetCameraDistance - CameraDistance) * amount;
+            PanX           += (TargetPanX           - PanX)           * amount;
+            PanY           += (TargetPanY           - PanY)           * amount;
+        }
+
+        public Vector3? GetMouseFloorIntersection(int mouseX, int mouseY, int screenWidth, int screenHeight)
+        {
+            if (_rtTex == null || screenWidth <= 0 || screenHeight <= 0) return null;
+
+            float aspect = (float)screenWidth / screenHeight;
+            Matrix camRotation = Matrix.RotationYawPitchRoll(CameraYaw, CameraPitch, 0);
+            Vector3 forward = Vector3.TransformNormal(Vector3.ForwardLH, camRotation);
+            Vector3 up      = Vector3.TransformNormal(Vector3.Up, camRotation);
+            Vector3 right   = Vector3.TransformNormal(Vector3.Right, camRotation);
+
+            var target = _modelCenter + right * PanX + up * PanY;
+            var camPos = target - (forward * CameraDistance);
+            
+            var view = Matrix.LookAtLH(camPos, target, up);
+            var proj = Matrix.PerspectiveFovLH(MathF.PI / 4f, aspect, 0.01f, _modelRadius * 500f);
+
+            var ray = SharpDX.Ray.GetPickRay(
+                mouseX, mouseY, 
+                new SharpDX.ViewportF { X = 0, Y = 0, Width = screenWidth, Height = screenHeight }, 
+                Matrix.Multiply(view, proj)
+            );
+
+            // In our DirectX coordinate system, the vertical axis is Y (UP)
+            float floorY = _modelCenter.Y - _modelRadius;
+            
+            // Ray-to-Plane Intersection (Plane equation: Y = floorY)
+            if (Math.Abs(ray.Direction.Y) < 0.0001f) return null; 
+
+            float t = (floorY - ray.Position.Y) / ray.Direction.Y;
+            
+            // Only return if the intersection is in front of the camera
+            if (t > 0)
+            {
+                return ray.Position + (ray.Direction * t);
+            }
+
+            return null;
+        }
 
         // -------------------------------------------------------------------------
         public Renderer()
@@ -136,14 +223,56 @@ namespace ToolKitV.Models.Rendering
                 MaximumLod         = float.MaxValue
             });
 
-            _rs = new RasterizerState(_device, new RasterizerStateDescription
+            _rsSolid = new RasterizerState(_device, new RasterizerStateDescription
             {
                 FillMode             = FillMode.Solid,
                 CullMode             = CullMode.None,
                 IsDepthClipEnabled   = true,
                 IsScissorEnabled     = false,
-                IsMultisampleEnabled = false
+                IsMultisampleEnabled = true,
+                IsAntialiasedLineEnabled = true
             });
+
+            _rsWireframe = new RasterizerState(_device, new RasterizerStateDescription
+            {
+                FillMode             = FillMode.Wireframe,
+                CullMode             = CullMode.None,
+                IsDepthClipEnabled   = true,
+                IsScissorEnabled     = false,
+                IsMultisampleEnabled = true,
+                IsAntialiasedLineEnabled = true
+            });
+
+            InitGridFloor();
+        }
+
+        private void InitGridFloor()
+        {
+            var vertices = new List<GridVertex>();
+            int size = 50;        // How far the grid extends
+            float step = 1.0f;    // 1 meter squares
+
+            for (int i = -size; i <= size; i++)
+            {
+                // X-axis lines
+                vertices.Add(new GridVertex { Position = new Vector3(i * step, 0, -size * step), Normal = Vector4.UnitY });
+                vertices.Add(new GridVertex { Position = new Vector3(i * step, 0,  size * step), Normal = Vector4.UnitY });
+                // Z-axis lines
+                vertices.Add(new GridVertex { Position = new Vector3(-size * step, 0, i * step), Normal = Vector4.UnitY });
+                vertices.Add(new GridVertex { Position = new Vector3( size * step, 0, i * step), Normal = Vector4.UnitY });
+            }
+
+            _gridVertexCount = vertices.Count;
+            _gridVb = Buffer.Create(_device, BindFlags.VertexBuffer, vertices.ToArray());
+
+            // Create a static layout for the grid
+            var elements = new[]
+            {
+                new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
+                new InputElement("NORMAL", 0, Format.R32G32B32A32_Float, 12, 0),
+                new InputElement("TEXCOORD", 0, Format.R32G32_Float, 28, 0) // Explicit TEXCOORD0 matching
+            };
+            _gridLayout = new InputLayout(_device, _vsBlob, elements);
         }
 
         // -------------------------------------------------------------------------
@@ -200,8 +329,15 @@ namespace ToolKitV.Models.Rendering
                 _modelCenter   = d.BoundingCenter;
                 _modelRadius   = Math.Max(0.5f, d.BoundingSphereRadius);
                 CameraDistance = _modelRadius * 2.8f;
+                TargetCameraDistance = CameraDistance;
                 PanX = 0f;
                 PanY = 0f;
+                TargetPanX = 0f;
+                TargetPanY = 0f;
+                CameraYaw = MathF.PI * 0.25f;
+                CameraPitch = 0.35f;
+                TargetCameraYaw = CameraYaw;
+                TargetCameraPitch = CameraPitch;
             }
 
             // Get the shader array so we can resolve texture names per geometry
@@ -268,7 +404,7 @@ namespace ToolKitV.Models.Rendering
                     try { ib = Buffer.Create(_device, BindFlags.IndexBuffer, geom.IndexBuffer.Indices); }
                     catch { layout.Dispose(); vb.Dispose(); continue; }
 
-                    _geoms.Add(new GeometryGpuData
+                    var gpuData = new GeometryGpuData
                     {
                         VertexBuffer = vb,
                         IndexBuffer  = ib,
@@ -276,7 +412,26 @@ namespace ToolKitV.Models.Rendering
                         VertexStride = vd.VertexStride,
                         IndexCount   = geom.IndexBuffer.Indices.Length,
                         TextureName  = textureName
-                    });
+                    };
+
+                    // Extract positions for magnetic snapping (Assuming 32-bit Float3 at offset 0)
+                    if (vd.VertexStride >= 12 && vd.VertexBytes != null && vd.VertexBytes.Length >= vd.VertexStride)
+                    {
+                        int numVertices = vd.VertexBytes.Length / vd.VertexStride;
+                        for (int i = 0; i < numVertices; i++)
+                        {
+                            int startIdx = i * vd.VertexStride;
+                            if (startIdx + 12 <= vd.VertexBytes.Length)
+                            {
+                                float vx = BitConverter.ToSingle(vd.VertexBytes, startIdx);
+                                float vy = BitConverter.ToSingle(vd.VertexBytes, startIdx + 4);
+                                float vz = BitConverter.ToSingle(vd.VertexBytes, startIdx + 8);
+                                gpuData.CachedPositions.Add(new Vector3(vx, vy, vz));
+                            }
+                        }
+                    }
+
+                    _geoms.Add(gpuData);
                 }
             }
 
@@ -293,13 +448,36 @@ namespace ToolKitV.Models.Rendering
         private static string? GetDiffuseTextureName(ShaderFX shader)
         {
             var plist = shader?.ParametersList;
-            if (plist?.Parameters == null) return null;
+            if (plist?.Parameters == null || plist.Hashes == null) return null;
 
-            foreach (var p in plist.Parameters)
+            int count = Math.Min(plist.Parameters.Length, plist.Hashes.Length);
+
+            // 1. Professional Tier: Search for parameters matching known diffuse sampler names
+            for (int i = 0; i < count; i++)
             {
-                if (p.DataType == 0 && p.Data is Texture tex)
-                    return tex.Name;
+                var p = plist.Parameters[i];
+                if (p.Data is Texture tex)
+                {
+                    string name = plist.Hashes[i].ToString();
+                    if (name.Equals("DiffuseSampler", StringComparison.OrdinalIgnoreCase) ||
+                        name.Equals("Texture", StringComparison.OrdinalIgnoreCase) ||
+                        name.Equals("diffusetexsampler", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return tex.Name;
+                    }
+                }
             }
+
+            // 2. Fallback: Grab the first parameter of DataType 0 that contains a Texture
+            for (int i = 0; i < count; i++)
+            {
+                var p = plist.Parameters[i];
+                if (p.DataType == 0 && p.Data is Texture tex)
+                {
+                    return tex.Name;
+                }
+            }
+
             return null;
         }
 
@@ -409,38 +587,40 @@ namespace ToolKitV.Models.Rendering
         // -------------------------------------------------------------------------
         public void Render()
         {
-            if (_rtv == null || _dsv == null) return;
+            if (_rtv == null || _dsv == null || _rtTex == null) return;
 
             _context.ClearRenderTargetView(_rtv, new Color4(0.08f, 0.09f, 0.11f, 1f));
             _context.ClearDepthStencilView(_dsv,
                 DepthStencilClearFlags.Depth | DepthStencilClearFlags.Stencil, 1f, 0);
 
-            if (_geoms.Count == 0 || _rtTex == null) goto Flush;
-
-            // Camera — orbit + pan
+            // --- UNRESTRICTED SPHERICAL CAMERA MATH ---
             float aspect = (float)_rtTex.Description.Width / _rtTex.Description.Height;
-            float cy = MathF.Cos(CameraYaw),   sy = MathF.Sin(CameraYaw);
-            float cp = MathF.Cos(CameraPitch),  sp = MathF.Sin(CameraPitch);
 
-            var forward = new Vector3(sy * cp, sp, cy * cp);
-            var right   = Vector3.Normalize(Vector3.Cross(Vector3.Up, forward));
-            var up      = Vector3.Normalize(Vector3.Cross(forward, right));
+            // Calculate the exact rotation matrix from Yaw and Pitch
+            Matrix camRotation = Matrix.RotationYawPitchRoll(CameraYaw, CameraPitch, 0);
+
+            // Dynamically calculate our Up, Right, and Forward vectors based on rotation
+            Vector3 forward = Vector3.TransformNormal(Vector3.ForwardLH, camRotation);
+            Vector3 up      = Vector3.TransformNormal(Vector3.Up, camRotation);
+            Vector3 right   = Vector3.TransformNormal(Vector3.Right, camRotation);
 
             var target = _modelCenter + right * PanX + up * PanY;
-            var camPos = target + forward * CameraDistance;
+            var camPos = target - (forward * CameraDistance); // Pull back from target
 
-            var view = Matrix.LookAtLH(camPos, target, Vector3.Up);
+            // Because 'up' is dynamic, this will NEVER Gimbal Lock!
+            var view = Matrix.LookAtLH(camPos, target, up); 
             var proj = Matrix.PerspectiveFovLH(MathF.PI / 4f, aspect, 0.01f, _modelRadius * 500f);
 
             var wvp = view * proj;
             Matrix.Transpose(ref wvp, out wvp);
 
-            // Set constant buffer — HasTexture is set per-draw-call below
+            // Set constant buffer — HasTexture and IsGrid are configured per-draw below
             var sc = new SceneConstants
             {
                 WorldViewProj = wvp,
                 LightDir      = Vector3.Normalize(new Vector3(-0.6f, -1f, 0.5f)),
                 HasTexture    = 0f,
+                IsGrid        = 0f,
                 Ambient       = new Vector4(0.55f, 0.55f, 0.58f, 1f)
             };
             _context.UpdateSubresource(ref sc, _cb);
@@ -450,36 +630,215 @@ namespace ToolKitV.Models.Rendering
             _context.PixelShader.Set(_ps);
             _context.PixelShader.SetConstantBuffer(0, _cb);
             _context.PixelShader.SetSampler(0, _sampler);
-            _context.Rasterizer.State = _rs;
+
+            // Apply Wireframe or Solid state
+            _context.Rasterizer.State = IsWireframeMode ? _rsWireframe : _rsSolid;
+
             _context.Rasterizer.SetViewport(new Viewport(0, 0,
                 _rtTex.Description.Width, _rtTex.Description.Height));
             _context.OutputMerger.SetTargets(_dsv, _rtv);
-            _context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
-            foreach (var g in _geoms)
+            // --- 1. DRAW THE GRID FIRST ---
+            if (_gridVb != null && _gridLayout != null)
             {
-                if (g.Layout == null || g.VertexBuffer == null || g.IndexBuffer == null) continue;
+                _context.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
+                _context.InputAssembler.InputLayout = _gridLayout;
+                _context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_gridVb, 36, 0));
 
-                // Per-geometry texture: look up by name, fall back to null
-                ShaderResourceView? srv = null;
-                if (g.TextureName != null)
-                    _textures.TryGetValue(g.TextureName, out srv);
-
-                // Update HasTexture flag and bind SRV
-                sc.HasTexture = srv != null ? 1f : 0f;
+                sc.IsGrid = 1f; // Tell HLSL to render grid lines
                 _context.UpdateSubresource(ref sc, _cb);
-                _context.PixelShader.SetShaderResource(0, srv);
 
-                _context.InputAssembler.InputLayout = g.Layout;
-                _context.InputAssembler.SetVertexBuffers(0,
-                    new VertexBufferBinding(g.VertexBuffer, g.VertexStride, 0));
-                _context.InputAssembler.SetIndexBuffer(g.IndexBuffer, Format.R16_UInt, 0);
-                _context.DrawIndexed(g.IndexCount, 0, 0);
+                _context.Draw(_gridVertexCount, 0);
             }
 
-            Flush:
+            // --- 2. DRAW THE 3D MODELS ---
+            if (_geoms.Count > 0)
+            {
+                _context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+                sc.IsGrid = 0f; // Turn off grid rendering for the models
+
+                foreach (var g in _geoms)
+                {
+                    if (g.Layout == null || g.VertexBuffer == null || g.IndexBuffer == null) continue;
+
+                    // Per-geometry texture: look up by name, fall back to null
+                    ShaderResourceView? srv = null;
+                    if (g.TextureName != null)
+                        _textures.TryGetValue(g.TextureName, out srv);
+
+                    // Update HasTexture flag and bind SRV
+                    sc.HasTexture = srv != null ? 1f : 0f;
+                    _context.UpdateSubresource(ref sc, _cb);
+                    _context.PixelShader.SetShaderResource(0, srv);
+
+                    _context.InputAssembler.InputLayout = g.Layout;
+                    _context.InputAssembler.SetVertexBuffers(0,
+                        new VertexBufferBinding(g.VertexBuffer, g.VertexStride, 0));
+                    _context.InputAssembler.SetIndexBuffer(g.IndexBuffer, Format.R16_UInt, 0);
+                    _context.DrawIndexed(g.IndexCount, 0, 0);
+                }
+            }
+
+            // --- 3. DRAW THE TARGETING ZONE LINES ---
+            DrawZoneLines(ref sc);
+
             _context.Flush();
             _imageSource.Invalidate();
+        }
+
+        private void DrawZoneLines(ref SceneConstants sc)
+        {
+            if (ZonePoints.Count == 0) return;
+
+            var lines = new List<GridVertex>();
+
+            // 1. Draw crosshairs for each point to give clear visual feedback
+            float size = _modelRadius * 0.03f; // Scale crosshair size based on model bounds
+            foreach (var pt in ZonePoints)
+            {
+                lines.Add(new GridVertex { Position = pt + new Vector3(-size, 0, 0), Normal = Vector4.UnitY });
+                lines.Add(new GridVertex { Position = pt + new Vector3(size, 0, 0), Normal = Vector4.UnitY });
+                lines.Add(new GridVertex { Position = pt + new Vector3(0, 0, -size), Normal = Vector4.UnitY });
+                lines.Add(new GridVertex { Position = pt + new Vector3(0, 0, size), Normal = Vector4.UnitY });
+            }
+
+            if (CurrentZoneType == TargetZoneType.BoxZone && ZonePoints.Count > 0)
+            {
+                // ─── BOXZONE MATH: Calculate 8 corners of a rotated 3D Box ───
+                Vector3 center = ZonePoints[0];
+                
+                // Convert heading to radians for math
+                float rad = BoxHeading * (MathF.PI / 180f);
+                float cos = MathF.Cos(rad);
+                float sin = MathF.Sin(rad);
+
+                // Half dimensions
+                float hw = BoxWidth / 2f;
+                float hl = BoxLength / 2f;
+
+                // Unrotated relative corners (Bottom floor: Y = 0, XZ plane is horizontal)
+                Vector3[] baseCorners = new Vector3[4]
+                {
+                    new Vector3(-hw, 0, -hl),
+                    new Vector3(hw, 0, -hl),
+                    new Vector3(hw, 0, hl),
+                    new Vector3(-hw, 0, hl)
+                };
+
+                Vector3[] bottomCorners = new Vector3[4];
+                Vector3[] topCorners = new Vector3[4];
+
+                // Apply Yaw (Y-axis) rotation matrix and translation
+                for (int i = 0; i < 4; i++)
+                {
+                    float rx = baseCorners[i].X * cos - baseCorners[i].Z * sin;
+                    float rz = baseCorners[i].X * sin + baseCorners[i].Z * cos;
+                    
+                    bottomCorners[i] = new Vector3(center.X + rx, center.Y, center.Z + rz);
+                    topCorners[i] = new Vector3(center.X + rx, center.Y + ZoneHeight, center.Z + rz);
+                }
+
+                // Build the Box Wireframe
+                for (int i = 0; i < 4; i++)
+                {
+                    int next = (i + 1) % 4;
+                    // Bottom square
+                    lines.Add(new GridVertex { Position = bottomCorners[i], Normal = Vector4.UnitY });
+                    lines.Add(new GridVertex { Position = bottomCorners[next], Normal = Vector4.UnitY });
+                    // Top square
+                    lines.Add(new GridVertex { Position = topCorners[i], Normal = Vector4.UnitY });
+                    lines.Add(new GridVertex { Position = topCorners[next], Normal = Vector4.UnitY });
+                    // Vertical pillars
+                    lines.Add(new GridVertex { Position = bottomCorners[i], Normal = Vector4.UnitY });
+                    lines.Add(new GridVertex { Position = topCorners[i], Normal = Vector4.UnitY });
+                }
+            }
+            else if (CurrentZoneType == TargetZoneType.PolyZone && ZonePoints.Count >= 2)
+            {
+                // ─── POLYZONE MATH: 3D Extrusion of clicked points ───
+                for (int i = 0; i < ZonePoints.Count; i++)
+                {
+                    Vector3 cb = ZonePoints[i];
+                    Vector3 nb = ZonePoints[(i + 1) % ZonePoints.Count];
+                    
+                    Vector3 ct = new Vector3(cb.X, cb.Y + ZoneHeight, cb.Z);
+                    Vector3 nt = new Vector3(nb.X, nb.Y + ZoneHeight, nb.Z);
+
+                    // Bottom line, Top line, Vertical pillar
+                    lines.Add(new GridVertex { Position = cb, Normal = Vector4.UnitY });
+                    lines.Add(new GridVertex { Position = nb, Normal = Vector4.UnitY });
+                    lines.Add(new GridVertex { Position = ct, Normal = Vector4.UnitY });
+                    lines.Add(new GridVertex { Position = nt, Normal = Vector4.UnitY });
+                    lines.Add(new GridVertex { Position = cb, Normal = Vector4.UnitY });
+                    lines.Add(new GridVertex { Position = ct, Normal = Vector4.UnitY });
+                }
+            }
+
+            if (lines.Count == 0) return;
+
+            using var lineVb = Buffer.Create(_device, BindFlags.VertexBuffer, lines.ToArray());
+            
+            _context.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
+            _context.InputAssembler.InputLayout = _gridLayout; // Reuse the grid layout
+            _context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(lineVb, 36, 0));
+
+            // Tell the shader to render this bright green instead of the grey models
+            sc.IsGrid = 2f; // 2f represents fluorescent green in our HLSL
+            _context.UpdateSubresource(ref sc, _cb);
+
+            _context.Draw(lines.Count, 0);
+        }
+
+        public Vector3? GetNearestVertexSnap(int mouseX, int mouseY, int screenWidth, int screenHeight)
+        {
+            if (_rtTex == null || _geoms.Count == 0 || screenWidth <= 0 || screenHeight <= 0) return null;
+
+            // 1. Build the Ray
+            float aspect = (float)screenWidth / screenHeight;
+            Matrix camRotation = Matrix.RotationYawPitchRoll(CameraYaw, CameraPitch, 0);
+            Vector3 forward = Vector3.TransformNormal(Vector3.ForwardLH, camRotation);
+            Vector3 up      = Vector3.TransformNormal(Vector3.Up, camRotation);
+            Vector3 right   = Vector3.TransformNormal(Vector3.Right, camRotation);
+
+            var target = _modelCenter + right * PanX + up * PanY;
+            var camPos = target - (forward * CameraDistance);
+            
+            var view = Matrix.LookAtLH(camPos, target, up);
+            var proj = Matrix.PerspectiveFovLH(MathF.PI / 4f, aspect, 0.01f, _modelRadius * 500f);
+
+            var ray = SharpDX.Ray.GetPickRay(
+                mouseX, mouseY, 
+                new SharpDX.ViewportF { X = 0, Y = 0, Width = screenWidth, Height = screenHeight }, 
+                Matrix.Multiply(view, proj)
+            );
+
+            Vector3? closestVertex = null;
+            float minDistanceToRay = Math.Max(0.15f, _modelRadius * 0.08f); // Snap threshold
+            float closestDepth = float.MaxValue;
+
+            // 2. Scan every vertex in the loaded geometry
+            foreach (var geom in _geoms)
+            {
+                foreach (Vector3 vertexPos in geom.CachedPositions) 
+                {
+                    // Check if vertex is in front of camera
+                    Vector3 toVertex = vertexPos - camPos;
+                    float depth = Vector3.Dot(toVertex, forward);
+                    if (depth < 0) continue;
+
+                    // Calculate perpendicular distance from the Ray line to the Vertex point
+                    float distToRay = Vector3.Cross(ray.Direction, vertexPos - ray.Position).Length();
+
+                    if (distToRay < minDistanceToRay && depth < closestDepth)
+                    {
+                        minDistanceToRay = distToRay;
+                        closestDepth = depth;
+                        closestVertex = vertexPos;
+                    }
+                }
+            }
+
+            return closestVertex;
         }
 
         private void ClearGeometries()
@@ -494,7 +853,10 @@ namespace ToolKitV.Models.Rendering
             foreach (var srv in _textures.Values) srv.Dispose();
             _textures.Clear();
             _sampler?.Dispose();
-            _rs?.Dispose();
+            _rsSolid?.Dispose();
+            _rsWireframe?.Dispose();
+            _gridVb?.Dispose();
+            _gridLayout?.Dispose();
             _cb?.Dispose();
             _vs?.Dispose();
             _ps?.Dispose();

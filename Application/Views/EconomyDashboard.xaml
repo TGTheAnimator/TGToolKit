@@ -1,0 +1,229 @@
+<UserControl x:Class="ToolKitV.Views.EconomyDashboard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:ToolKitV.Views"
+             Background="#0A0A0A"
+             FontFamily="Fonts/#TT Norms">
+
+    <UserControl.Resources>
+        <!-- HintBrush declared here so it is always in scope for any StaticResource reference below -->
+        <VisualBrush x:Key="HintBrush" TileMode="None" Stretch="None" AlignmentX="Left">
+            <VisualBrush.Visual>
+                <TextBlock Text="Filter items by spawn code or label..." Foreground="#444444" FontStyle="Italic"/>
+            </VisualBrush.Visual>
+        </VisualBrush>
+
+        <!-- DataGrid Style modifications for premium dark theme -->
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="RowBackground" Value="#111111"/>
+            <Setter Property="AlternatingRowBackground" Value="#161616"/>
+            <Setter Property="BorderBrush" Value="#252525"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#1E1E1E"/>
+            <Setter Property="VerticalGridLinesBrush" Value="Transparent"/>
+            <Setter Property="RowHeaderWidth" Value="0"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#1C1C1E"/>
+            <Setter Property="Foreground" Value="#8E8E93"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="FontWeight" Value="DemiBold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="BorderBrush" Value="#2D2D30"/>
+        </Style>
+
+        <Style TargetType="DataGridCell">
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#2C2C2E"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="DataGridRow">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1F1F21"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- Main Panel Content -->
+        <Grid Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Title Header -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                <DockPanel>
+                    <TextBlock Text="⚖️" FontSize="26" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Text="Economy &amp; Loot Balancer" Foreground="White" FontSize="22" FontWeight="Bold" VerticalAlignment="Center"/>
+                </DockPanel>
+                <TextBlock Text="Surgically adjust item weights and prices across multiple scripts. Sync changes in an optimized bulk transaction." 
+                           Foreground="#888888" FontSize="12" Margin="0,6,0,0"/>
+            </StackPanel>
+
+            <!-- Filters & Search Toolbar -->
+            <Border Grid.Row="1" Background="#161616" BorderBrush="#252525" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Search Input Box -->
+                    <DockPanel Grid.Column="0">
+                        <TextBlock Text="🔍" Foreground="#666666" FontSize="13" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBox x:Name="SearchBox" Foreground="White" BorderThickness="0"
+                                 FontSize="12" VerticalAlignment="Center" CaretBrush="White"
+                                 TextChanged="SearchBox_TextChanged">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Style.Triggers>
+                                        <!-- HintBrush is declared in UserControl.Resources above, always in scope -->
+                                        <Trigger Property="Text" Value="">
+                                            <Setter Property="Background" Value="{StaticResource HintBrush}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+                    </DockPanel>
+
+                    <!-- Refresh Button -->
+                    <Button Grid.Column="1" Content="🔄 Scan Server" Cursor="Hand" Click="ScanBtn_Click" BorderThickness="0" Height="28" Width="100">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Bg" Background="#222" BorderBrush="#444" BorderThickness="1" CornerRadius="5">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextBlock.Foreground="#CCCCCC" TextBlock.FontSize="11" TextBlock.FontWeight="Bold"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bg" Property="Background" Value="#333"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Items spreadsheet Grid -->
+            <Border Grid.Row="2" Background="#111" BorderBrush="#252525" BorderThickness="1" CornerRadius="8" Padding="1">
+                <DataGrid x:Name="EconomyGrid" AutoGenerateColumns="False" CanUserAddRows="False"
+                          HeadersVisibility="Column" SelectionMode="Single" SelectionUnit="FullRow"
+                          GridLinesVisibility="Horizontal" BorderThickness="0">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Spawn Code" Binding="{Binding SpawnCode}" IsReadOnly="True" Width="140" Foreground="#666666"/>
+                        
+                        <DataGridTemplateColumn Header="Label" IsReadOnly="True" Width="200">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Margin="6,0,0,0">
+                                        <!-- Glowing status color dot -->
+                                        <Ellipse Width="6" Height="6" Fill="{Binding RowColor}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding Label}" Foreground="White" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTextColumn Header="Weight (g)" Binding="{Binding Weight, UpdateSourceTrigger=LostFocus}" Width="100"/>
+                        <DataGridTextColumn Header="Buy Price ($)" Binding="{Binding BuyPrice, UpdateSourceTrigger=LostFocus}" Width="120"/>
+                        <DataGridTextColumn Header="Sell Price ($)" Binding="{Binding SellPrice, UpdateSourceTrigger=LostFocus}" Width="120"/>
+                        
+                        <DataGridTemplateColumn Header="Status" IsReadOnly="True" Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding StatusText}" Foreground="{Binding RowColor}" FontWeight="Bold" Margin="8,0,0,0"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <!-- Bottom status bar and Sync triggers -->
+            <Grid Grid.Row="3" Margin="0,16,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Status alert panel -->
+                <Border x:Name="StatusAlertPanel" Grid.Column="0" Background="#1AFFA500" BorderBrush="#88FFA500" BorderThickness="1" CornerRadius="6" Padding="14,10" Visibility="Collapsed" Margin="0,0,16,0">
+                    <DockPanel>
+                        <TextBlock Text="⚠️" Foreground="#FFA500" FontSize="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="StatusAlertTitle" Text="Economy modifications pending sync!" Foreground="#FFA500" FontSize="12" FontWeight="Bold"/>
+                            <TextBlock Text="Changes are kept in local memory. Click 'Sync Economy to Server' to write back to files securely." Foreground="#88FFA500" FontSize="10"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <!-- Sync Action Button -->
+                <Button x:Name="btnSync" Grid.Column="1" Content="💾 Sync Economy to Server" Cursor="Hand" Click="btnSync_Click" BorderThickness="0" Height="38" Width="210">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bg" Background="#C0132A" CornerRadius="6">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextBlock.Foreground="White" TextBlock.FontSize="12" TextBlock.FontWeight="Bold"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bg" Property="Background" Value="#E01535"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Bg" Property="Opacity" Value="0.4"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Grid>
+        </Grid>
+
+        <!-- Dynamic Action Surgery Progress Overlay -->
+        <Grid x:Name="ActionOverlay" Background="#E6050505" Visibility="Collapsed" Panel.ZIndex="100">
+            <Border Width="480" Height="280" Background="#111" BorderBrush="#333" BorderThickness="1" CornerRadius="8" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="20">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock x:Name="txtOverlayTitle" Grid.Row="0" Text="Executing Economy Surgery..." Foreground="White" FontWeight="Bold" FontSize="15" Margin="0,0,0,12"/>
+                    
+                    <ProgressBar x:Name="ActionProgressBar" Grid.Row="1" Height="4" Background="#222" Foreground="#C0132A" Minimum="0" Maximum="100" Margin="0,0,0,12" BorderThickness="0"/>
+                    
+                    <TextBlock x:Name="txtActionStatus" Grid.Row="2" Text="Initializing local delta workspace..." Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,10"/>
+                    
+                    <!-- Terminal Console logger panel -->
+                    <Border Grid.Row="3" Background="#050505" BorderBrush="#222" BorderThickness="1" CornerRadius="4" Padding="8">
+                        <ScrollViewer x:Name="ActionLogScroller" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <TextBlock x:Name="txtActionLog" Foreground="#4CFF70" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" LineHeight="16"/>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

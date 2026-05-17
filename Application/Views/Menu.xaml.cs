@@ -78,6 +78,13 @@ namespace ToolKitV.Views
             NavigateTo?.Invoke("VehicleTools");
         }
 
+        private void Economy_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (_activeView == "Economy") return;
+            SetActiveItem("Economy");
+            NavigateTo?.Invoke("Economy");
+        }
+
         private void AssetAnalyzer_Click(object sender, MouseButtonEventArgs e)
         {
             if (_activeView == "AssetAnalyzer") return;
@@ -127,6 +134,20 @@ namespace ToolKitV.Views
             NavigateTo?.Invoke("SirenBuilder");
         }
 
+        private void NuiSandbox_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (_activeView == "NuiSandbox") return;
+            SetActiveItem("NuiSandbox");
+            NavigateTo?.Invoke("NuiSandbox");
+        }
+
+        private void SqlMatrix_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (_activeView == "SqlMatrix") return;
+            SetActiveItem("SqlMatrix");
+            NavigateTo?.Invoke("SqlMatrix");
+        }
+
         // ── Visual state ──────────────────────────────────────────────────────
 
         private void SetActiveItem(string view)
@@ -158,6 +179,16 @@ namespace ToolKitV.Views
             VehiclesStripe.Visibility     = vehiclesActive ? Visibility.Visible   : Visibility.Collapsed;
             VehiclesLabel.FontWeight      = vehiclesActive ? FontWeights.Bold     : FontWeights.Normal;
             VehiclesLabel.Foreground      = vehiclesActive
+                ? new SolidColorBrush(Colors.White)
+                : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
+
+            // Economy item
+            bool economyActive = view == "Economy";
+            EconomyBg.Visibility         = economyActive ? Visibility.Visible   : Visibility.Collapsed;
+            EconomyInactiveBg.Visibility = economyActive ? Visibility.Collapsed : Visibility.Visible;
+            EconomyStripe.Visibility     = economyActive ? Visibility.Visible   : Visibility.Collapsed;
+            EconomyLabel.FontWeight      = economyActive ? FontWeights.Bold     : FontWeights.Normal;
+            EconomyLabel.Foreground      = economyActive
                 ? new SolidColorBrush(Colors.White)
                 : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
 
@@ -215,12 +246,32 @@ namespace ToolKitV.Views
                 ? new SolidColorBrush(Colors.White)
                 : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
 
+            // SQL Matrix item
+            bool sqlMatrixActive = view == "SqlMatrix";
+            SqlMatrixBg.Visibility         = sqlMatrixActive ? Visibility.Visible   : Visibility.Collapsed;
+            SqlMatrixInactiveBg.Visibility = sqlMatrixActive ? Visibility.Collapsed : Visibility.Visible;
+            SqlMatrixStripe.Visibility     = sqlMatrixActive ? Visibility.Visible   : Visibility.Collapsed;
+            SqlMatrixLabel.FontWeight      = sqlMatrixActive ? FontWeights.Bold     : FontWeights.Normal;
+            SqlMatrixLabel.Foreground      = sqlMatrixActive
+                ? new SolidColorBrush(Colors.White)
+                : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
+
             // Siren Builder item
             SirenBuilderBg.Visibility         = sirenBuilderActive ? Visibility.Visible   : Visibility.Collapsed;
             SirenBuilderInactiveBg.Visibility = sirenBuilderActive ? Visibility.Collapsed : Visibility.Visible;
             SirenBuilderStripe.Visibility     = sirenBuilderActive ? Visibility.Visible   : Visibility.Collapsed;
             SirenBuilderLabel.FontWeight      = sirenBuilderActive ? FontWeights.Bold     : FontWeights.Normal;
             SirenBuilderLabel.Foreground      = sirenBuilderActive
+                ? new SolidColorBrush(Colors.White)
+                : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
+
+            // NUI Sandbox item
+            bool nuiSandboxActive = view == "NuiSandbox";
+            NuiSandboxBg.Visibility         = nuiSandboxActive ? Visibility.Visible   : Visibility.Collapsed;
+            NuiSandboxInactiveBg.Visibility = nuiSandboxActive ? Visibility.Collapsed : Visibility.Visible;
+            NuiSandboxStripe.Visibility     = nuiSandboxActive ? Visibility.Visible   : Visibility.Collapsed;
+            NuiSandboxLabel.FontWeight      = nuiSandboxActive ? FontWeights.Bold     : FontWeights.Normal;
+            NuiSandboxLabel.Foreground      = nuiSandboxActive
                 ? new SolidColorBrush(Colors.White)
                 : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
         }

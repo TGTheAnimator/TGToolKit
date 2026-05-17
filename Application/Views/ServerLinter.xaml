@@ -23,6 +23,8 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="6"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="6"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
@@ -78,9 +80,58 @@
                     </Button.Style>
                 </Button>
 
-                <!-- Auto-Wire button — fuzzy ecosystem wirer, only in local mode post-scan -->
-                <Button x:Name="AutoWireButton"
+                <!-- Auto-Fix Manifests button — dedicated two-sweep manifest fixer, post-scan (local + SFTP) -->
+                <Button x:Name="FixManifestsButton"
                         Grid.Row="4"
+                        Content="&#x1FA84;  Auto-Fix Manifests"
+                        Click="FixManifestsButton_Click"
+                        Cursor="Hand"
+                        Visibility="Collapsed"
+                        FontFamily="Fonts/#TT Norms"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Height="38"
+                        BorderThickness="0">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bg"
+                                                CornerRadius="8"
+                                                Background="#1AFFD700"
+                                                BorderBrush="#40FFD700"
+                                                BorderThickness="1">
+                                            <TextBlock Text="{TemplateBinding Content}"
+                                                       Foreground="#FFD700"
+                                                       FontFamily="Fonts/#TT Norms"
+                                                       FontSize="12"
+                                                       FontWeight="Bold"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bg" Property="Background"  Value="#30FFD700"/>
+                                                <Setter TargetName="Bg" Property="BorderBrush" Value="#65FFD700"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="Bg" Property="Background" Value="#48FFD700"/>
+                                            </Trigger>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter TargetName="Bg" Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
+                <!-- Auto-Wire button — fuzzy ecosystem wirer, post-scan (local + SFTP) -->
+                <Button x:Name="AutoWireButton"
+                        Grid.Row="6"
                         Content="&#x1F9E0;  Auto-Wire Config"
                         Click="AutoWireButton_Click"
                         Cursor="Hand"
@@ -129,14 +180,14 @@
 
                 <!-- Restore Backups button — subdued steel outline, non-competing with primary actions -->
                 <Button x:Name="RestoreBackupsButton"
-                        Grid.Row="5"
+                        Grid.Row="7"
                         Content="↩  Restore Backups"
                         Click="RestoreBackupsButton_Click"
                         Cursor="Hand"
                         Visibility="Collapsed"
                         FontFamily="Fonts/#TT Norms"
                         FontSize="11"
-                        FontWeight="SemiBold"
+                        FontWeight="DemiBold"
                         Height="34"
                         Margin="0,4,0,0"
                         BorderThickness="0">
@@ -154,7 +205,7 @@
                                                        Foreground="#888888"
                                                        FontFamily="Fonts/#TT Norms"
                                                        FontSize="11"
-                                                       FontWeight="SemiBold"
+                                                       FontWeight="DemiBold"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
                                         </Border>
@@ -314,6 +365,38 @@
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="0 0 8 0">
             <StackPanel>
+
+                <!-- Scanning status card — visible only while the scan is running -->
+                <Border x:Name="ScanningCard"
+                        CornerRadius="10"
+                        BorderThickness="1"
+                        BorderBrush="#30FF5555"
+                        Background="#0DFF5555"
+                        Padding="18 16"
+                        Margin="0 0 0 16"
+                        Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock x:Name="ScanStatusText"
+                                   Text="Initialising…"
+                                   Foreground="#E0FFFFFF"
+                                   FontFamily="Fonts/#TT Norms"
+                                   FontSize="12"
+                                   FontWeight="Bold"
+                                   Margin="0 0 0 12"/>
+                        <ProgressBar IsIndeterminate="True"
+                                     Height="3"
+                                     BorderThickness="0"
+                                     Background="#20FFFFFF">
+                            <ProgressBar.Foreground>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#FF5555" Offset="0"/>
+                                    <GradientStop Color="#C0132A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </ProgressBar.Foreground>
+                        </ProgressBar>
+                    </StackPanel>
+                </Border>
+
                 <!-- Summary stats -->
                 <Border CornerRadius="10"
                         BorderThickness="1"

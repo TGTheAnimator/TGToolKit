@@ -13,14 +13,12 @@
     <FileVersion>3.4.1.0</FileVersion>
     <SignAssembly>false</SignAssembly>
     <ApplicationIcon>Assets\Images\logo.ico</ApplicationIcon>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- ── Single-file self-contained publish ── -->
-    <PublishSingleFile>true</PublishSingleFile>
+    <!-- ── Self-contained folder publish (CefSharp requires native DLLs on disk) ── -->
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -29,7 +27,9 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="CefSharp.Wpf.NETCore" Version="147.0.100" />
     <PackageReference Include="CodeWalker.Core" Version="1.0.3" />
+    <PackageReference Include="MySqlConnector" Version="2.5.0" />
     <PackageReference Include="NAudio" Version="2.3.0" />
     <PackageReference Include="SharpDX" Version="4.2.0" />
     <PackageReference Include="SharpDX.D3DCompiler" Version="4.2.0" />
@@ -38,6 +38,7 @@
     <PackageReference Include="SharpDX.DXGI" Version="4.2.0" />
     <PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
     <PackageReference Include="SSH.NET" Version="2024.2.0" />
+    <PackageReference Include="WinSCP" Version="6.3.4" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assets\Images\clothesIcon.png" />
@@ -57,14 +58,18 @@
     <Content Include="Assets\Images\logo.ico" />
     <Content Include="Models\Rendering\DefaultShader.hlsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assets\Images\bg.bmp" />
   </ItemGroup>
   <ItemGroup>
+    <!-- texconv stays in Dependencies\ subfolder -->
     <None Update="Dependencies\texconv.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
+    <!-- WinSCP.exe is automatically published to root by the WinSCP NuGet package -->
   </ItemGroup>
 </Project>

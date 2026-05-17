@@ -1,173 +1,164 @@
-using Renci.SshNet;
-using Renci.SshNet.Sftp;
+#pragma warning disable CS0618   // GiveUpSecurityAndAcceptAnySshHostKey is obsolete but required
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using WinSCP;
 
 namespace ToolKitV.Models.Providers
 {
     /// <summary>
-    /// SSH.NET implementation of <see cref="IFileSystemProvider"/>.
-    /// Targets RocketNode / Pterodactyl containers over SFTP.
-    /// A single persistent <see cref="SftpClient"/> is reused for the lifetime of
-    /// the Auto-Wire session and disposed via <see cref="Disconnect"/>.
+    /// WinSCP .NET assembly implementation of <see cref="IFileSystemProvider"/>.
+    /// Maintains a single persistent session for the lifetime of an Auto-Wirer /
+    /// Conflict Resolver operation. Uses server-side <c>cp</c> for fast backups.
     /// </summary>
     public class SftpFileSystemProvider : IFileSystemProvider
     {
-        private readonly SftpClient _client;
+        private Session? _session;
+        private readonly SessionOptions _opts;
 
-        /// <summary>
-        /// Opens and authenticates the SFTP connection immediately.
-        /// Throws <see cref="Exception"/> if the credentials are wrong or the host
-        /// is unreachable — the caller should catch and surface this in the UI.
-        /// </summary>
         public SftpFileSystemProvider(string host, int port, string username, string password)
         {
-            _client = new SftpClient(host, port, username, password);
-            _client.Connect();
-        }
+            _opts = new SessionOptions
+            {
+                Protocol                           = Protocol.Sftp,
+                HostName                           = host,
+                PortNumber                         = port,
+                UserName                           = username,
+                Password                           = password,
+                GiveUpSecurityAndAcceptAnySshHostKey = true,
+                TimeoutInMilliseconds              = 20_000,
+            };
 
-        // ── Traversal ──────────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// Recursively walks the remote directory tree under <paramref name="rootPath"/>
-        /// and returns every file whose name matches <paramref name="searchPattern"/>.
-        /// <para>
-        /// Pattern handling:
-        /// <list type="bullet">
-        ///   <item><c>"fxmanifest.lua"</c> — exact filename match</item>
-        ///   <item><c>"*.lua"</c>          — any file ending in <c>.lua</c></item>
-        /// </list>
-        /// </para>
-        /// </summary>
-        public async Task<List<string>> DiscoverFilesAsync(string rootPath, string searchPattern)
-        {
-            var matchedFiles = new List<string>();
-
-            // Convert glob pattern to a simple suffix/exact check
-            string matchTerm = searchPattern.StartsWith("*")
-                ? searchPattern[1..].ToLowerInvariant()   // "*.lua"  →  ".lua"
-                : searchPattern.ToLowerInvariant();        // exact name
-
-            await Task.Run(() => TraverseDirectory(rootPath, matchedFiles, matchTerm));
-            return matchedFiles;
-        }
-
-        private void TraverseDirectory(string remotePath, List<string> matched, string matchTerm)
-        {
-            IEnumerable<ISftpFile> entries;
             try
             {
-                entries = _client.ListDirectory(remotePath);
+                _session = SftpManifestProvider.OpenSession(_opts);
             }
-            catch
+            catch (Exception ex)
             {
-                return; // Inaccessible — permission denied or doesn't exist
-            }
-
-            foreach (var entry in entries)
-            {
-                if (entry.Name == "." || entry.Name == "..") continue;
-
-                if (entry.IsDirectory)
-                {
-                    TraverseDirectory(entry.FullName, matched, matchTerm);
-                }
-                else if (entry.Name.ToLowerInvariant().EndsWith(matchTerm) ||
-                         entry.Name.ToLowerInvariant() == matchTerm)
-                {
-                    matched.Add(entry.FullName);
-                }
+                throw new InvalidOperationException(
+                    $"Cannot connect to SFTP at {host}:{port}\n\n{ex.Message}", ex);
             }
         }
 
-        // ── I/O ────────────────────────────────────────────────────────────────────
+        private Session S => _session ?? throw new ObjectDisposedException(nameof(SftpFileSystemProvider));
 
-        /// <summary>
-        /// Downloads the remote file into an in-memory buffer and returns its text.
-        /// No temporary files are written to the local disk.
-        /// </summary>
-        public async Task<string> ReadAllTextAsync(string remotePath)
+        /// <summary>Normalises any path to Linux forward-slashes before passing to WinSCP.</summary>
+        private static string N(string p) => p.Replace('\\', '/');
+
+        // ── Traversal ─────────────────────────────────────────────────────────────
+
+        public Task<List<string>> DiscoverFilesAsync(string rootPath, string searchPattern)
         {
-            return await Task.Run(() =>
+            return Task.Run(() =>
             {
-                using var ms = new MemoryStream();
-                _client.DownloadFile(remotePath, ms);
-                ms.Position = 0;
-                using var reader = new StreamReader(ms, System.Text.Encoding.UTF8);
-                return reader.ReadToEnd();
+                // EnumerateRemoteFiles handles recursion natively — no manual traversal needed
+                string mask = searchPattern.StartsWith('*') ? searchPattern : $"*{searchPattern}";
+
+                return S.EnumerateRemoteFiles(N(rootPath), mask, WinSCP.EnumerationOptions.AllDirectories)
+                    .Select(f => N(f.FullName))
+                    .ToList();
             });
         }
 
-        /// <summary>
-        /// Encodes <paramref name="content"/> as UTF-8 and streams it directly to
-        /// the remote path via SFTP upload — no temp files, no disk I/O.
-        /// </summary>
-        public async Task WriteAllTextAsync(string remotePath, string content)
+        // ── I/O ───────────────────────────────────────────────────────────────────
+
+        public Task<string> ReadAllTextAsync(string remotePath)
         {
-            await Task.Run(() =>
+            return Task.Run(() =>
             {
-                using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
-                _client.UploadFile(ms, remotePath, true);
+                string tmp = Path.GetTempFileName();
+                try
+                {
+                    S.GetFiles(N(remotePath), tmp).Check();
+                    return File.ReadAllText(tmp);
+                }
+                finally { try { File.Delete(tmp); } catch { } }
             });
         }
 
-        // ── Safety ─────────────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// Creates <c>{originalPath}.tg_backup</c> on the remote server.
-        /// Uses a download-then-upload cycle because SFTP has no native copy command.
-        /// Skips silently if the backup already exists (idempotent).
-        /// </summary>
-        public async Task CreateBackupAsync(string originalPath)
+        public Task WriteAllTextAsync(string remotePath, string content)
         {
-            await Task.Run(() =>
+            return Task.Run(() =>
             {
-                string backupPath = originalPath + ".tg_backup";
+                string tmp = Path.GetTempFileName();
+                try
+                {
+                    File.WriteAllText(tmp, content, System.Text.Encoding.UTF8);
+                    S.PutFiles(tmp, N(remotePath)).Check();
+                }
+                finally { try { File.Delete(tmp); } catch { } }
+            });
+        }
 
-                // Don't overwrite an existing backup — protects original state
-                if (_client.Exists(backupPath)) return;
+        // ── Safety ────────────────────────────────────────────────────────────────
+
+        public Task CreateBackupAsync(string originalPath)
+        {
+            return Task.Run(() =>
+            {
+                string backupPath = N(originalPath) + ".tg_backup";
+                string normOriginal = N(originalPath);
+
+                if (S.FileExists(backupPath)) return;
 
                 try
                 {
-                    // Stream: remote source → memory → remote backup
-                    using var ms = new MemoryStream();
-                    _client.DownloadFile(originalPath, ms);
-                    ms.Position = 0;
-                    _client.UploadFile(ms, backupPath, false);
+                    // Server-side copy — no data transfer to local machine, instant
+                    S.ExecuteCommand($"cp \"{normOriginal}\" \"{backupPath}\"");
                 }
-                catch { /* Best-effort — never block a fix due to backup failure */ }
+                catch
+                {
+                    // Fallback: download → re-upload
+                    try
+                    {
+                        string tmp = Path.GetTempFileName();
+                        try
+                        {
+                            S.GetFiles(originalPath, tmp).Check();
+                            S.PutFiles(tmp, backupPath).Check();
+                        }
+                        finally { try { File.Delete(tmp); } catch { } }
+                    }
+                    catch { /* best-effort — never block a fix */ }
+                }
             });
         }
 
-        /// <summary>Deletes a remote file. Used to clean up .tg_backup files after successful restore.</summary>
         public Task DeleteFileAsync(string remotePath)
-            => Task.Run(() => _client.DeleteFile(remotePath));
+            => Task.Run(() => S.RemoveFile(N(remotePath)));
 
-        /// <summary>
-        /// Renames a remote directory (or file). SSH.NET uses the same SFTP rename
-        /// operation for both — no recursive copy required.
-        /// </summary>
         public Task RenameDirectoryAsync(string oldPath, string newPath)
-            => Task.Run(() => _client.RenameFile(oldPath, newPath));
+            => Task.Run(() => S.MoveFile(N(oldPath), N(newPath)));
 
-        // ── Lifecycle ──────────────────────────────────────────────────────────────
+        public Task DownloadDirectoryAsync(string remotePath, string localTempPath)
+        {
+            return Task.Run(() =>
+            {
+                var transferOptions = new TransferOptions { TransferMode = TransferMode.Binary };
+                TransferOperationResult result = S.GetFiles(N(remotePath), localTempPath, false, transferOptions);
+                result.Check();
+            });
+        }
 
-        /// <summary>
-        /// Cleanly closes the SFTP session and disposes the underlying SSH channel.
-        /// Must be called when the Auto-Wire operation completes.
-        /// </summary>
+        public Task UploadFileAsync(string localFilePath, string remoteFilePath)
+        {
+            return Task.Run(() =>
+            {
+                var transferOptions = new TransferOptions { TransferMode = TransferMode.Binary };
+                TransferOperationResult result = S.PutFiles(localFilePath, N(remoteFilePath), false, transferOptions);
+                result.Check();
+            });
+        }
+
+        // ── Lifecycle ─────────────────────────────────────────────────────────────
+
         public void Disconnect()
         {
-            try
-            {
-                if (_client.IsConnected) _client.Disconnect();
-            }
-            finally
-            {
-                _client.Dispose();
-            }
+            try { if (_session?.Opened == true) _session.Close(); }
+            finally { _session?.Dispose(); _session = null; }
         }
     }
 }
+#pragma warning restore CS0618

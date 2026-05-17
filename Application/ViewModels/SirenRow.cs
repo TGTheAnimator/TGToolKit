@@ -49,6 +49,26 @@ namespace ToolKitV.ViewModels
             }
         }
 
+        private bool _isSelected;
+        /// <summary>
+        /// True when this row is the active selection for preset application.
+        /// Drives LabelForeground so the user always knows which siren is targeted.
+        /// </summary>
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected == value) return;
+                _isSelected = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(LabelForeground));
+            }
+        }
+
+        /// <summary>Accent red when selected, dim white when idle.</summary>
+        public string LabelForeground => _isSelected ? "#FF5555" : "#C0FFFFFF";
+
         public ObservableCollection<TickCell> Ticks { get; }
 
         /// <summary>
