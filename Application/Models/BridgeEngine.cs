@@ -63,5 +63,46 @@ namespace ToolKitV.Models
                 return false;
             }
         }
+        public static async System.Threading.Tasks.Task ApplyRecipesAsync(
+            Providers.IFileSystemProvider provider, 
+            string rootPath, 
+            System.Collections.Generic.List<IntegrationRecipe> recipes, 
+            LogWriter log)
+        {
+            var audit = new AuditLogger();
+            rootPath = rootPath.TrimEnd('/', '\\');
+
+            foreach (var recipe in recipes)
+            {
+                foreach (var patch in recipe.Patches)
+                {
+                    string targetFile = $"{rootPath}/{recipe.TargetResource}/{patch.TargetFilePath}";
+
+                    try
+                    {
+                        string content = await provider.ReadAllTextAsync(targetFile);
+                        string original = content;
+
+                        if (ApplyPatch(ref content, patch, log))
+                        {
+                            if (content != original)
+                            {
+                                await provider.CreateBackupAsync(targetFile);
+                                await provider.WriteAllTextAsync(targetFile, content);
+                                audit.LogChange(targetFile, $"Applied Patch for {recipe.RecipeId}", recipe.Description);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        log.LogWrite($"[ERROR] Failed to apply patch for {recipe.RecipeId} to {targetFile}: {ex.Message}");
+                    }
+                }
+            }
+
+            string auditReport = audit.GenerateReport();
+            string auditFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tgtoolkit_audit.txt");
+            System.IO.File.WriteAllText(auditFile, auditReport);
+        }
     }
 }

@@ -22,6 +22,7 @@ namespace ToolKitV.Views
         private bool _isSftp = false;
         private Models.ServerLinter.LinterResult? _lastResult;
         private string _lastScannedDirectory = string.Empty;
+        private List<IntegrationRecipe> _applicableRecipes = new();
 
         /// <summary>
         /// Sanitises the raw host string the user typed into the SFTP Host field.
@@ -281,9 +282,10 @@ namespace ToolKitV.Views
                         : Visibility.Collapsed;
 
                 // Auto-Fix Manifests, Auto-Wire, and Restore available after ANY scan — local OR SFTP
-                FixManifestsButton.Visibility   = Visibility.Visible;
-                AutoWireButton.Visibility       = Visibility.Visible;
-                RestoreBackupsButton.Visibility = Visibility.Visible;
+                FixManifestsButton.Visibility         = Visibility.Visible;
+                AutoWireButton.Visibility             = Visibility.Visible;
+                RestoreBackupsButton.Visibility       = Visibility.Visible;
+                RunIntegrationBridgeButton.Visibility = Visibility.Visible;
             }
             catch (Exception ex)
             {
@@ -548,6 +550,97 @@ namespace ToolKitV.Views
                 RestoreBackupsButton.IsEnabled     = true;
                 AutoWireButton.IsEnabled           = true;
                 RunLintButton.IsButtonEnabledValue = true;
+            }
+        }
+
+        // ── Integration Bridge Logic ──────────────────────────────────────────
+
+        private async void RunIntegrationBridgeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_lastResult == null)
+            {
+                MessageBox.Show("Run a scan first.", "Integration Bridge",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            try
+            {
+                // Disable UI while scanning
+                RunIntegrationBridgeButton.IsEnabled = false;
+                ScanStatusText.Text = "Scanning workspace for recipe applicability...";
+                ScanningCard.Visibility = Visibility.Visible;
+
+                // Identify applicable recipes using the cached resources from the scan
+                string recipesDir = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Recipes");
+                var availableResources = new List<string>(_lastResult.InstalledResources);
+                _applicableRecipes = RecipeManager.GetApplicableRecipes(recipesDir, availableResources);
+
+                ScanningCard.Visibility = Visibility.Collapsed;
+
+                if (_applicableRecipes.Count == 0)
+                {
+                    MessageBox.Show("No applicable integration recipes found for the resources in your workspace.", "Integration Bridge", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                // Show the overlay
+                RecipeList.ItemsSource = _applicableRecipes;
+                IntegrationOverlay.Visibility = Visibility.Visible;
+            }
+            catch (Exception ex)
+            {
+                ScanningCard.Visibility = Visibility.Collapsed;
+                MessageBox.Show($"Failed to scan for recipes:\n{ex.Message}", "Integration Bridge Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                RunIntegrationBridgeButton.IsEnabled = true;
+            }
+        }
+
+        private void CancelIntegrationButton_Click(object sender, RoutedEventArgs e)
+        {
+            IntegrationOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private async void ExecuteIntegrationButton_Click(object sender, RoutedEventArgs e)
+        {
+            IntegrationOverlay.Visibility = Visibility.Collapsed;
+            
+            ScanStatusText.Text = "Executing Integration Patches...";
+            ScanningCard.Visibility = Visibility.Visible;
+            
+            IFileSystemProvider? provider = null;
+            try
+            {
+                string targetPath = _isSftp ? SftpRootPath.TextValue : _lastScannedDirectory;
+
+                if (_isSftp)
+                {
+                    int fallback = int.TryParse(SftpPort.Value, out int pf) ? pf : 22;
+                    var (h, p) = ParseSftpHost(SftpHost.TextValue, fallback);
+                    provider = new SftpFileSystemProvider(h, p, SftpUsername.TextValue, SftpPassword.Password);
+                }
+                else
+                {
+                    provider = new LocalFileSystemProvider();
+                }
+                
+                var log = new LogWriter("=== Integration Bridge ===");
+                await BridgeEngine.ApplyRecipesAsync(provider, targetPath, _applicableRecipes, log);
+                
+                string auditFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tgtoolkit_audit.txt");
+                MessageBox.Show($"Integration Bridge complete! Patched {_applicableRecipes.Count} recipes.\n\nAn audit log has been saved to:\n{auditFile}", "Integration Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show($"Error during execution:\n{ex.Message}", "Execution Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                provider?.Disconnect();
+                ScanningCard.Visibility = Visibility.Collapsed;
             }
         }
     }

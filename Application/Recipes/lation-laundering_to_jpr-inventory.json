@@ -1,0 +1,20 @@
+{
+  "RecipeId": "lation-laundering_to_jpr-inventory",
+  "RequiredResource": "jpr-inventory",
+  "TargetResource": "lation_laundering",
+  "Description": "Bridges Lation's money laundering to read and write directly to JPR Inventory.",
+  "Patches": [
+    {
+      "TargetFilePath": "server/functions.lua",
+      "SearchSnippet": "local count = exports.ox_inventory:Search(source, 'count', Config.DirtyMoneyItem)",
+      "ReplaceWith": "local count = exports['jpr-inventory']:GetItemCount(source, Config.DirtyMoneyItem)",
+      "IsRegex": false
+    },
+    {
+      "TargetFilePath": "server/functions.lua",
+      "SearchSnippet": "exports.ox_inventory:RemoveItem(source, Config.DirtyMoneyItem, amount)",
+      "ReplaceWith": "exports['jpr-inventory']:RemoveItem(source, Config.DirtyMoneyItem, amount)",
+      "IsRegex": false
+    }
+  ]
+}

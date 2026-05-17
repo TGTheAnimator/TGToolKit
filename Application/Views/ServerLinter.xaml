@@ -25,6 +25,8 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="6"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="6"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
@@ -178,9 +180,58 @@
                     </Button.Style>
                 </Button>
 
+                <!-- Integration Bridge button — triggers Omni-Wirer Level 2 -->
+                <Button x:Name="RunIntegrationBridgeButton"
+                        Grid.Row="7"
+                        Content="&#x1F30D;  Run Integration Bridge"
+                        Click="RunIntegrationBridgeButton_Click"
+                        Cursor="Hand"
+                        Visibility="Collapsed"
+                        FontFamily="Fonts/#TT Norms"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Height="38"
+                        BorderThickness="0">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bg"
+                                                CornerRadius="8"
+                                                Background="#20E08030"
+                                                BorderBrush="#40E08030"
+                                                BorderThickness="1">
+                                            <TextBlock Text="{TemplateBinding Content}"
+                                                       Foreground="#E08030"
+                                                       FontFamily="Fonts/#TT Norms"
+                                                       FontSize="12"
+                                                       FontWeight="Bold"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bg" Property="Background"  Value="#33E08030"/>
+                                                <Setter TargetName="Bg" Property="BorderBrush" Value="#65E08030"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="Bg" Property="Background" Value="#50E08030"/>
+                                            </Trigger>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter TargetName="Bg" Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
                 <!-- Restore Backups button — subdued steel outline, non-competing with primary actions -->
                 <Button x:Name="RestoreBackupsButton"
-                        Grid.Row="7"
+                        Grid.Row="9"
                         Content="↩  Restore Backups"
                         Click="RestoreBackupsButton_Click"
                         Cursor="Hand"
@@ -520,5 +571,55 @@
                 </Border>
             </StackPanel>
         </ScrollViewer>
+
+        <!-- ══ INTEGRATION BRIDGE OVERLAY ══ -->
+        <Grid x:Name="IntegrationOverlay" Grid.ColumnSpan="3" Background="#D0000000" Visibility="Collapsed" Panel.ZIndex="99">
+            <Border Width="600" Height="400" Background="#111" BorderBrush="#333" BorderThickness="1" CornerRadius="8" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <StackPanel Grid.Row="0" Margin="0,0,0,15">
+                        <TextBlock Text="&#x1F30D; INTEGRATION BRIDGE" Foreground="#E08030" FontFamily="Fonts/#TT Norms" FontWeight="Bold" FontSize="16"/>
+                        <TextBlock Text="The following recipes are applicable to your current workspace. Execution will permanently modify the target files." Foreground="#AAA" FontFamily="Fonts/#TT Norms" FontSize="11" Margin="0,5,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    
+                    <!-- Recipe List -->
+                    <Border Grid.Row="1" Background="#0A0A0A" BorderBrush="#222" BorderThickness="1" CornerRadius="4" Padding="5">
+                        <ItemsControl x:Name="RecipeList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#333" BorderThickness="0,0,0,1" Padding="10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding RecipeId}" Foreground="White" FontFamily="Fonts/#TT Norms" FontWeight="Bold" FontSize="13"/>
+                                                <TextBlock Text="{Binding Description}" Foreground="#888" FontFamily="Fonts/#TT Norms" FontSize="11" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Text="{Binding Patches.Count, StringFormat='{}Requires {0} patches'}" Foreground="#C0132A" FontFamily="Fonts/#TT Norms" FontSize="11" VerticalAlignment="Center" FontWeight="DemiBold"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                    
+                    <Grid Grid.Row="2" Margin="0,15,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="Cancel" Height="35" Width="100" HorizontalAlignment="Left" Background="#222" Foreground="White" FontFamily="Fonts/#TT Norms" BorderThickness="0" Click="CancelIntegrationButton_Click" Cursor="Hand"/>
+                        <Button Grid.Column="1" Content="Execute Patches" Height="35" Width="150" Background="#C0132A" Foreground="White" FontFamily="Fonts/#TT Norms" FontWeight="Bold" BorderThickness="0" Click="ExecuteIntegrationButton_Click" Cursor="Hand"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

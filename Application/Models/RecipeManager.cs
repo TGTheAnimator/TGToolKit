@@ -48,5 +48,38 @@ namespace ToolKitV.Models
 
             log.LogWrite($"[SYSTEM] Loaded {ActiveRecipes.Count} Integration Recipes.");
         }
+        public static List<IntegrationRecipe> GetApplicableRecipes(string recipeDir, List<string> availableResources)
+        {
+            var applicable = new List<IntegrationRecipe>();
+            if (!Directory.Exists(recipeDir)) return applicable;
+
+            string[] recipeFiles = Directory.GetFiles(recipeDir, "*.json");
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+            foreach (var file in recipeFiles)
+            {
+                try
+                {
+                    string json = File.ReadAllText(file);
+                    var recipe = JsonSerializer.Deserialize<IntegrationRecipe>(json, options);
+                    
+                    if (recipe != null && !string.IsNullOrEmpty(recipe.TargetResource) && !string.IsNullOrEmpty(recipe.RequiredResource))
+                    {
+                        // Check if both the target resource to patch AND the required ecosystem resource exist in the workspace
+                        if (availableResources.Contains(recipe.TargetResource, StringComparer.OrdinalIgnoreCase) && 
+                            availableResources.Contains(recipe.RequiredResource, StringComparer.OrdinalIgnoreCase))
+                        {
+                            applicable.Add(recipe);
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore parse failures for applicability scans
+                }
+            }
+
+            return applicable;
+        }
     }
 }

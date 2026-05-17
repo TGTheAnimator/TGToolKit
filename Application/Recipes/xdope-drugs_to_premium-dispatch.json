@@ -1,0 +1,14 @@
+{
+  "RecipeId": "xdope-drugs_to_premium-dispatch",
+  "RequiredResource": "jpr-mdtsystem",
+  "TargetResource": "xdope_drugs",
+  "Description": "Reroutes XDope drug sale police alerts to the JPR MDT Dispatch system.",
+  "Patches": [
+    {
+      "TargetFilePath": "client/alerts.lua",
+      "SearchSnippet": "exports['ps-dispatch']:DrugSale()",
+      "ReplaceWith": "exports['jpr-mdtsystem']:CreateDispatchAlert('Drug Dealing', '10-31', 'Suspicious hand-to-hand activity reported.', coords)",
+      "IsRegex": false
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "RecipeId": "jg-garages_to_jpr-keys",
+  "RequiredResource": "jpr-keys",
+  "TargetResource": "jg-advancedgarages",
+  "Description": "Automatically grants JPR vehicle keys when spawning a vehicle from JG Garages.",
+  "Patches": [
+    {
+      "TargetFilePath": "server/main.lua",
+      "SearchSnippet": "if Config.VehicleKeys == 'qb' then TriggerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)",
+      "ReplaceWith": "--if Config.VehicleKeys == 'qb' then\nexports['jpr-keys']:GiveKey(source, plate)",
+      "IsRegex": false
+    }
+  ]
+}
