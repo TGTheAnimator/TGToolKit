@@ -136,6 +136,13 @@ namespace ToolKitV.Views
             NavigateTo?.Invoke("RecipeStudio");
         }
 
+        private void ItemImporter_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (_activeView == "ItemImporter") return;
+            SetActiveItem("ItemImporter");
+            NavigateTo?.Invoke("ItemImporter");
+        }
+
         private void SqlMatrix_Click(object sender, MouseButtonEventArgs e)
         {
             if (_activeView == "SqlMatrix") return;
@@ -158,6 +165,7 @@ namespace ToolKitV.Views
             bool serverLinterActive  = view == "ServerLinter";
             bool sirenBuilderActive  = view == "SirenBuilder";
             bool recipeStudioActive  = view == "RecipeStudio";
+            bool itemImporterActive  = view == "ItemImporter";
 
             // Texture Optimizer item
             TextureOptimizerBg.Visibility         = texActive ? Visibility.Visible   : Visibility.Collapsed;
@@ -239,6 +247,15 @@ namespace ToolKitV.Views
             RecipeStudioStripe.Visibility     = recipeStudioActive ? Visibility.Visible   : Visibility.Collapsed;
             RecipeStudioLabel.FontWeight      = recipeStudioActive ? FontWeights.Bold     : FontWeights.Normal;
             RecipeStudioLabel.Foreground      = recipeStudioActive
+                ? new SolidColorBrush(Colors.White)
+                : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
+
+            // Asset Importer item
+            ItemImporterBg.Visibility         = itemImporterActive ? Visibility.Visible   : Visibility.Collapsed;
+            ItemImporterInactiveBg.Visibility = itemImporterActive ? Visibility.Collapsed : Visibility.Visible;
+            ItemImporterStripe.Visibility     = itemImporterActive ? Visibility.Visible   : Visibility.Collapsed;
+            ItemImporterLabel.FontWeight      = itemImporterActive ? FontWeights.Bold     : FontWeights.Normal;
+            ItemImporterLabel.Foreground      = itemImporterActive
                 ? new SolidColorBrush(Colors.White)
                 : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
 

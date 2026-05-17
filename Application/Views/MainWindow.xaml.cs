@@ -18,6 +18,7 @@ namespace ToolKitV
         private readonly ServerLinter        _serverLinterView = new();
         private readonly SirenBuilder        _sirenBuilderView = new();
         private readonly RecipeStudio        _recipeStudioView = new();
+        private readonly ItemImporter        _itemImporterView = new();
         private readonly SqlMatrix           _sqlMatrixView    = new();
         private readonly EconomyDashboard    _economyView      = new();
 
@@ -31,6 +32,9 @@ namespace ToolKitV
 
             // Wire up menu navigation
             SideMenu.NavigateTo += OnNavigateTo;
+            
+            // Inject Linter reference so ItemImporter can grab SFTP credentials and paths
+            _itemImporterView.RegisterLinterReference(_serverLinterView);
         }
 
         public string GetSftpPassword() => _serverLinterView.GetSftpPassword();
@@ -83,6 +87,11 @@ namespace ToolKitV
                 case "RecipeStudio":
                     MainContent.Content  = _recipeStudioView;
                     AppSubtitle.Text     = "  Visual Recipe Studio";
+                    break;
+
+                case "ItemImporter":
+                    MainContent.Content  = _itemImporterView;
+                    AppSubtitle.Text     = "  Asset & Item Importer";
                     break;
 
                 case "SqlMatrix":

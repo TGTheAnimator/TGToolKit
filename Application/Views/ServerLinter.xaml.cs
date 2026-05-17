@@ -63,6 +63,22 @@ namespace ToolKitV.Views
         public bool IsSftpMode() => _isSftp;
         public string GetLocalFolder() => LocalFolder?.Path ?? string.Empty;
 
+        public IFileSystemProvider GetConfiguredProvider()
+        {
+            if (_isSftp)
+            {
+                int fallback = int.TryParse(SftpPort.Value, out int pf) ? pf : 22;
+                var (h, p) = ParseSftpHost(SftpHost.TextValue, fallback);
+                return new SftpFileSystemProvider(h, p, SftpUsername.TextValue, SftpPassword.Password);
+            }
+            return new LocalFileSystemProvider();
+        }
+
+        public string GetRootPath()
+        {
+            return _isSftp ? SftpRootPath.TextValue : _lastScannedDirectory;
+        }
+
         public ServerLinter()
         {
             InitializeComponent();

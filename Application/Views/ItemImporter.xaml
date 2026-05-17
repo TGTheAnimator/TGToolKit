@@ -1,0 +1,88 @@
+<UserControl x:Class="ToolKitV.Views.ItemImporter"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:ToolKitV.Views"
+             Background="#050505">
+    
+    <UserControl.Resources>
+        <local:ImageStatusConverter x:Key="ImageStatusConverter" />
+        <local:ImageColorConverter x:Key="ImageColorConverter" />
+    </UserControl.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="&#x1F4E6; Asset &amp; Item Importer" Foreground="White" FontFamily="Fonts/#TT Norms" FontSize="20" FontWeight="Bold"/>
+            <TextBlock Text="Scan newly downloaded scripts for items and automatically inject them into your server's master inventory. Edit raw Lua directly to adjust metadata, stats, or create variations." Foreground="#AAA" FontFamily="Fonts/#TT Norms" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="180"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Content="1. Scan Local Script Folder" Height="35" Width="180" Background="#333" Foreground="White" FontFamily="Fonts/#TT Norms" Click="btnScan_Click"/>
+            
+            <TextBlock Grid.Column="2" Text="Target Inventory:" Foreground="White" FontFamily="Fonts/#TT Norms" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <ComboBox x:Name="cbTargetInventory" Grid.Column="3" Background="#111" Foreground="White" BorderBrush="#333" FontFamily="Fonts/#TT Norms" SelectedIndex="0" Height="30">
+                <ComboBoxItem Content="ox_inventory"/>
+                <ComboBoxItem Content="qb-core / qb-inventory"/>
+                <ComboBoxItem Content="jpr-inventory"/>
+                <ComboBoxItem Content="qs-inventory"/>
+            </ComboBox>
+        </Grid>
+
+        <DataGrid x:Name="ItemGrid" Grid.Row="2" AutoGenerateColumns="False" 
+                  Background="#1E1E1E" RowBackground="#1E1E1E" AlternatingRowBackground="#252525"
+                  Foreground="White" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333"
+                  BorderBrush="#333" BorderThickness="1" CanUserAddRows="False" IsReadOnly="False">
+            <DataGrid.ContextMenu>
+                <ContextMenu Background="#222" Foreground="White" BorderBrush="#444">
+                    <MenuItem Header="Add Variation (Duplicate Row)" Click="DuplicateRow_Click" />
+                </ContextMenu>
+            </DataGrid.ContextMenu>
+            <DataGrid.Columns>
+                <!-- Read Only columns for basic reference -->
+                <DataGridTextColumn Header="Spawn Code" Binding="{Binding SpawnCode}" IsReadOnly="True" Width="120" Foreground="#888"/>
+                <DataGridTextColumn Header="Label" Binding="{Binding Label}" IsReadOnly="True" Width="120" Foreground="#888"/>
+                
+                <DataGridTemplateColumn Header="Image File Status" Width="180" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding ImageFileName}" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="White"/>
+                                <TextBlock Text="{Binding LocalImagePath, Converter={StaticResource ImageStatusConverter}}" 
+                                           Foreground="{Binding LocalImagePath, Converter={StaticResource ImageColorConverter}}" 
+                                           FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Fully Editable Column for Raw Lua (Metadata, Stats, Attributes) -->
+                <DataGridTemplateColumn Header="Raw Lua Snippet (Editable Metadata/Stats)" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBox Text="{Binding RawLuaSnippet, UpdateSourceTrigger=PropertyChanged}" 
+                                     Background="#111" Foreground="#4CFF70" FontFamily="Consolas" FontSize="12"
+                                     BorderBrush="#444" Padding="5" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="80"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Button x:Name="btnInject" Grid.Row="3" Content="2. Inject Assets to Server" Height="40" Width="220" 
+                HorizontalAlignment="Right" Margin="0,20,0,0" Background="#C0132A" Foreground="White" FontFamily="Fonts/#TT Norms"
+                FontWeight="Bold" BorderThickness="0" Click="btnInject_Click" IsEnabled="False" Cursor="Hand"/>
+    </Grid>
+</UserControl>
