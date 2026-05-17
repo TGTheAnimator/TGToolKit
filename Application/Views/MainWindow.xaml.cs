@@ -21,11 +21,13 @@ namespace ToolKitV
         private readonly ItemImporter        _itemImporterView = new();
         private readonly SqlMatrix           _sqlMatrixView    = new();
         private readonly EconomyDashboard    _economyView      = new();
+        private readonly GlobalTranspilerView _globalTranspilerView;
 
 
         public MainWindow()
         {
             InitializeComponent();
+            _globalTranspilerView = new GlobalTranspilerView(_serverLinterView);
 
             // Start on Texture Optimizer
             MainContent.Content = _textureView;
@@ -98,6 +100,11 @@ namespace ToolKitV
                     MainContent.Content  = _sqlMatrixView;
                     AppSubtitle.Text     = "  SQL Migration Matrix";
                     _sqlMatrixView.UpdateSftpInfo();
+                    break;
+                    
+                case "GlobalTranspiler":
+                    MainContent.Content  = _globalTranspilerView;
+                    AppSubtitle.Text     = "  Global Transpiler Engine";
                     break;
 
 

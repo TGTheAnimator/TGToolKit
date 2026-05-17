@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
@@ -7,6 +8,8 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using ToolKitV.Models;
 using ToolKitV.Models.Providers;
+using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace ToolKitV.Views
 {
@@ -679,6 +682,7 @@ namespace ToolKitV.Views
                 provider?.Disconnect();
                 ScanningCard.Visibility = Visibility.Collapsed;
             }
+        }
         private async void btnIgnore_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is IssueViewModel issue)
@@ -824,6 +828,15 @@ namespace ToolKitV.Views
                 {
                     provider?.Disconnect();
                 }
+            }
+        }
+        private void OpenGlobalTranspilerButton_Click(object sender, RoutedEventArgs e)
+        {
+            var mainWindow = Application.Current.MainWindow as MainWindow;
+            if (mainWindow != null)
+            {
+                // This will trigger the routing in MainWindow to switch to the GlobalTranspiler view
+                mainWindow.SideMenu.InvokeNavigateTo("GlobalTranspiler");
             }
         }
     }

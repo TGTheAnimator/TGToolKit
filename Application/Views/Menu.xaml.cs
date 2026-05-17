@@ -150,6 +150,20 @@ namespace ToolKitV.Views
             NavigateTo?.Invoke("SqlMatrix");
         }
 
+        private void GlobalTranspiler_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (_activeView == "GlobalTranspiler") return;
+            SetActiveItem("GlobalTranspiler");
+            NavigateTo?.Invoke("GlobalTranspiler");
+        }
+
+        public void InvokeNavigateTo(string view)
+        {
+            if (_activeView == view) return;
+            SetActiveItem(view);
+            NavigateTo?.Invoke(view);
+        }
+
         // ── Visual state ──────────────────────────────────────────────────────
 
         private void SetActiveItem(string view)
@@ -266,6 +280,16 @@ namespace ToolKitV.Views
             SqlMatrixStripe.Visibility     = sqlMatrixActive ? Visibility.Visible   : Visibility.Collapsed;
             SqlMatrixLabel.FontWeight      = sqlMatrixActive ? FontWeights.Bold     : FontWeights.Normal;
             SqlMatrixLabel.Foreground      = sqlMatrixActive
+                ? new SolidColorBrush(Colors.White)
+                : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
+
+            // Global Transpiler item
+            bool globalTranspilerActive = view == "GlobalTranspiler";
+            GlobalTranspilerBg.Visibility         = globalTranspilerActive ? Visibility.Visible   : Visibility.Collapsed;
+            GlobalTranspilerInactiveBg.Visibility = globalTranspilerActive ? Visibility.Collapsed : Visibility.Visible;
+            GlobalTranspilerStripe.Visibility     = globalTranspilerActive ? Visibility.Visible   : Visibility.Collapsed;
+            GlobalTranspilerLabel.FontWeight      = globalTranspilerActive ? FontWeights.Bold     : FontWeights.Normal;
+            GlobalTranspilerLabel.Foreground      = globalTranspilerActive
                 ? new SolidColorBrush(Colors.White)
                 : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
 
