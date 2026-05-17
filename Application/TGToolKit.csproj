@@ -27,16 +27,9 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CefSharp.Wpf.NETCore" Version="147.0.100" />
     <PackageReference Include="CodeWalker.Core" Version="1.0.3" />
     <PackageReference Include="MySqlConnector" Version="2.5.0" />
     <PackageReference Include="NAudio" Version="2.3.0" />
-    <PackageReference Include="SharpDX" Version="4.2.0" />
-    <PackageReference Include="SharpDX.D3DCompiler" Version="4.2.0" />
-    <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
-    <PackageReference Include="SharpDX.Direct3D9" Version="4.2.0" />
-    <PackageReference Include="SharpDX.DXGI" Version="4.2.0" />
-    <PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
     <PackageReference Include="SSH.NET" Version="2024.2.0" />
     <PackageReference Include="WinSCP" Version="6.3.4" />
   </ItemGroup>
@@ -56,10 +49,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Assets\Images\logo.ico" />
-    <Content Include="Models\Rendering\DefaultShader.hlsl">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assets\Images\bg.bmp" />

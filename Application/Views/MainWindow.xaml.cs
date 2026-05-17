@@ -11,15 +11,16 @@ namespace ToolKitV
         private readonly TextureOptimization _textureView      = new();
         private readonly VehicleTools        _vehicleView      = new();
         private readonly AssetAnalyzer       _assetView        = new();
-        private readonly ModelViewer         _modelView        = new();
+
         private readonly ClothingTools       _clothingView     = new();
         private readonly AudioViewer         _audioView        = new();
         private readonly YtdSplitter         _ytdSplitView     = new();
         private readonly ServerLinter        _serverLinterView = new();
         private readonly SirenBuilder        _sirenBuilderView = new();
+        private readonly RecipeStudio        _recipeStudioView = new();
         private readonly SqlMatrix           _sqlMatrixView    = new();
         private readonly EconomyDashboard    _economyView      = new();
-        private readonly NuiSandbox          _nuiSandboxView   = new();
+
 
         public MainWindow()
         {
@@ -53,10 +54,6 @@ namespace ToolKitV
                     AppSubtitle.Text     = "  Resource Budget Analyzer";
                     break;
 
-                case "ModelViewer":
-                    MainContent.Content  = _modelView;
-                    AppSubtitle.Text     = "  3D Model Preview";
-                    break;
 
                 case "ClothingTools":
                     MainContent.Content  = _clothingView;
@@ -83,16 +80,17 @@ namespace ToolKitV
                     AppSubtitle.Text     = "  Visual Siren Builder";
                     break;
 
+                case "RecipeStudio":
+                    MainContent.Content  = _recipeStudioView;
+                    AppSubtitle.Text     = "  Visual Recipe Studio";
+                    break;
+
                 case "SqlMatrix":
                     MainContent.Content  = _sqlMatrixView;
                     AppSubtitle.Text     = "  SQL Migration Matrix";
                     _sqlMatrixView.UpdateSftpInfo();
                     break;
 
-                case "NuiSandbox":
-                    MainContent.Content  = _nuiSandboxView;
-                    AppSubtitle.Text     = "  NUI Sandbox Studio";
-                    break;
 
                 case "Economy":
                     MainContent.Content  = _economyView;

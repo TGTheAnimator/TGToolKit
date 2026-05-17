@@ -92,12 +92,6 @@ namespace ToolKitV.Views
             NavigateTo?.Invoke("AssetAnalyzer");
         }
 
-        private void ModelViewer_Click(object sender, MouseButtonEventArgs e)
-        {
-            if (_activeView == "ModelViewer") return;
-            SetActiveItem("ModelViewer");
-            NavigateTo?.Invoke("ModelViewer");
-        }
 
         private void ClothingTools_Click(object sender, MouseButtonEventArgs e)
         {
@@ -134,11 +128,12 @@ namespace ToolKitV.Views
             NavigateTo?.Invoke("SirenBuilder");
         }
 
-        private void NuiSandbox_Click(object sender, MouseButtonEventArgs e)
+
+        private void RecipeStudio_Click(object sender, MouseButtonEventArgs e)
         {
-            if (_activeView == "NuiSandbox") return;
-            SetActiveItem("NuiSandbox");
-            NavigateTo?.Invoke("NuiSandbox");
+            if (_activeView == "RecipeStudio") return;
+            SetActiveItem("RecipeStudio");
+            NavigateTo?.Invoke("RecipeStudio");
         }
 
         private void SqlMatrix_Click(object sender, MouseButtonEventArgs e)
@@ -157,12 +152,12 @@ namespace ToolKitV.Views
             bool texActive           = view == "TextureOptimizer";
             bool vehiclesActive      = view == "VehicleTools";
             bool assetActive         = view == "AssetAnalyzer";
-            bool modelActive         = view == "ModelViewer";
             bool clothingActive      = view == "ClothingTools";
             bool audioActive         = view == "AudioViewer";
             bool ytdSplitActive      = view == "YtdSplitter";
             bool serverLinterActive  = view == "ServerLinter";
             bool sirenBuilderActive  = view == "SirenBuilder";
+            bool recipeStudioActive  = view == "RecipeStudio";
 
             // Texture Optimizer item
             TextureOptimizerBg.Visibility         = texActive ? Visibility.Visible   : Visibility.Collapsed;
@@ -201,14 +196,6 @@ namespace ToolKitV.Views
                 ? new SolidColorBrush(Colors.White)
                 : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
 
-            // Model Viewer item
-            ModelViewerBg.Visibility         = modelActive ? Visibility.Visible   : Visibility.Collapsed;
-            ModelViewerInactiveBg.Visibility = modelActive ? Visibility.Collapsed : Visibility.Visible;
-            ModelViewerStripe.Visibility     = modelActive ? Visibility.Visible   : Visibility.Collapsed;
-            ModelViewerLabel.FontWeight      = modelActive ? FontWeights.Bold     : FontWeights.Normal;
-            ModelViewerLabel.Foreground      = modelActive
-                ? new SolidColorBrush(Colors.White)
-                : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
 
             // Clothing Tools item
             ClothingToolsBg.Visibility         = clothingActive ? Visibility.Visible   : Visibility.Collapsed;
@@ -246,6 +233,15 @@ namespace ToolKitV.Views
                 ? new SolidColorBrush(Colors.White)
                 : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
 
+            // Recipe Studio item
+            RecipeStudioBg.Visibility         = recipeStudioActive ? Visibility.Visible   : Visibility.Collapsed;
+            RecipeStudioInactiveBg.Visibility = recipeStudioActive ? Visibility.Collapsed : Visibility.Visible;
+            RecipeStudioStripe.Visibility     = recipeStudioActive ? Visibility.Visible   : Visibility.Collapsed;
+            RecipeStudioLabel.FontWeight      = recipeStudioActive ? FontWeights.Bold     : FontWeights.Normal;
+            RecipeStudioLabel.Foreground      = recipeStudioActive
+                ? new SolidColorBrush(Colors.White)
+                : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
+
             // SQL Matrix item
             bool sqlMatrixActive = view == "SqlMatrix";
             SqlMatrixBg.Visibility         = sqlMatrixActive ? Visibility.Visible   : Visibility.Collapsed;
@@ -265,15 +261,7 @@ namespace ToolKitV.Views
                 ? new SolidColorBrush(Colors.White)
                 : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
 
-            // NUI Sandbox item
-            bool nuiSandboxActive = view == "NuiSandbox";
-            NuiSandboxBg.Visibility         = nuiSandboxActive ? Visibility.Visible   : Visibility.Collapsed;
-            NuiSandboxInactiveBg.Visibility = nuiSandboxActive ? Visibility.Collapsed : Visibility.Visible;
-            NuiSandboxStripe.Visibility     = nuiSandboxActive ? Visibility.Visible   : Visibility.Collapsed;
-            NuiSandboxLabel.FontWeight      = nuiSandboxActive ? FontWeights.Bold     : FontWeights.Normal;
-            NuiSandboxLabel.Foreground      = nuiSandboxActive
-                ? new SolidColorBrush(Colors.White)
-                : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
+
         }
     }
 }
