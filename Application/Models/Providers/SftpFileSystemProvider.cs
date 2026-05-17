@@ -136,8 +136,20 @@ namespace ToolKitV.Models.Providers
         {
             return Task.Run(() =>
             {
-                var transferOptions = new TransferOptions { TransferMode = TransferMode.Binary };
-                TransferOperationResult result = S.GetFiles(N(remotePath), localTempPath, false, transferOptions);
+                var transferOptions = new TransferOptions 
+                { 
+                    TransferMode = TransferMode.Binary,
+                    // STRATEGIC MASK: Pull only configs/manifests/scripts. 
+                    // Exclude heavy stream assets, large binaries, and source control.
+                    FileMask = "*.lua;*.cfg;*.meta;*.json;*.xml;*.js;*.ts;*.html;*.css | */stream/*; */node_modules/*; */.git/*; */.vscode/*; */.idea/*; *.yft; *.ytd; *.ydr; *.ybn; *.ymap; *.ytyp; *.awc; *.dll; *.so; *.zip; *.rar; *.7z; *.png; *.jpg; *.jpeg; *.mp3; *.wav; *.ogg"
+                };
+                
+                // Add "/*" to remotePath to pull contents into localTempPath correctly
+                string remoteSearch = N(remotePath);
+                if (!remoteSearch.EndsWith("/")) remoteSearch += "/";
+                remoteSearch += "*";
+                
+                TransferOperationResult result = S.GetFiles(remoteSearch, localTempPath, false, transferOptions);
                 result.Check();
             });
         }
