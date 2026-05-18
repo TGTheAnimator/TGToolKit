@@ -108,7 +108,7 @@ namespace ToolKitV.Models
 
                 // STEP 9: The Upload Delta
                 log.LogWrite("[PHASE 9] Pushing optimized, secure ecosystem to live server...");
-                await UploadDirectoryDeltaAsync(fs, tempWorkspace, remoteWorkspace, log);
+                await fs.UploadDirectoryBulkAsync(tempWorkspace, remoteWorkspace, log);
                 log.LogWrite("[PHASE 9 SUCCESS] Codebase push complete.");
 
                 log.LogWrite("=== DEPLOYMENT COMPLETE. SERVER IS READY FOR LAUNCH ===");
@@ -147,28 +147,6 @@ namespace ToolKitV.Models
                 }
                 return false;
             }
-        }
-
-        private async Task UploadDirectoryDeltaAsync(
-            IFileSystemProvider fs, 
-            string localPath, 
-            string remotePath,
-            LogWriter log)
-        {
-            var localFiles = Directory.GetFiles(localPath, "*", SearchOption.AllDirectories);
-            int count = 0;
-
-            foreach (var localFile in localFiles)
-            {
-                string relPath = Path.GetRelativePath(localPath, localFile);
-                string remoteFile = Path.Combine(remotePath, relPath).Replace('\\', '/');
-
-                if (localFile.EndsWith(".zip") || localFile.EndsWith(".tg_backup") || localFile.Contains(".tg_backup")) continue;
-
-                await fs.UploadFileAsync(localFile, remoteFile);
-                count++;
-            }
-            log.LogWrite($"[PHASE 9] Transferred {count} files to the server.");
         }
 
         private async Task CloneLocalWorkspaceFilteredAsync(string sourceRoot, string targetRoot, LogWriter log)

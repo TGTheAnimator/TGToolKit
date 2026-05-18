@@ -164,6 +164,65 @@ namespace ToolKitV.Models.Providers
             });
         }
 
+        public async Task UploadDirectoryBulkAsync(string localDirectory, string remoteDirectory, ToolKitV.Models.LogWriter? log = null)
+        {
+            await Task.Run(() =>
+            {
+                // 1. Optimize the Transfer Options for maximum speed
+                TransferOptions transferOptions = new TransferOptions
+                {
+                    TransferMode = TransferMode.Binary,
+                    // If true, WinSCP calculates checksums which slows down massive transfers of tiny Lua files
+                    PreserveTimestamp = false 
+                };
+
+                // We explicitly exclude .zip and .tg_backup files right at the protocol level
+                transferOptions.FileMask = "* | *.zip; *.tg_backup";
+
+                // 2. Format the paths for WinSCP
+                // WinSCP expects the local path to end with \* to signify "upload contents of this folder"
+                string localMask = Path.Combine(localDirectory, "*");
+                string remotePath = N(remoteDirectory);
+
+                if (!remotePath.EndsWith("/")) remotePath += "/";
+
+                log?.LogWrite($"[SFTP-BULK] Initiating high-speed pipeline for {localDirectory}...");
+
+                int maxRetries = 3;
+                int currentRetry = 0;
+
+                while (true)
+                {
+                    try
+                    {
+                        // 3. Hand the entire job to WinSCP's C++ engine. 
+                        // This is 100x faster than a C# foreach loop.
+                        TransferOperationResult transferResult = S.PutFiles(localMask, remotePath, false, transferOptions);
+
+                        // 4. Validate the bulk transfer
+                        transferResult.Check();
+
+                        // Print summary
+                        log?.LogWrite($"[SFTP-BULK SUCCESS] Pipelined {transferResult.Transfers.Count} files to the server instantly.");
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        currentRetry++;
+                        if (currentRetry >= maxRetries)
+                        {
+                            log?.LogWrite($"[SFTP-BULK FATAL ERROR] Transfer failed after {maxRetries} attempts: {ex.Message}");
+                            throw;
+                        }
+
+                        int delaySec = currentRetry * 2;
+                        log?.LogWrite($"[SFTP-BULK WARNING] Transfer failed: {ex.Message}. Retrying in {delaySec} seconds... ({currentRetry}/{maxRetries})");
+                        System.Threading.Thread.Sleep(delaySec * 1000);
+                    }
+                }
+            });
+        }
+
         // ── Lifecycle ─────────────────────────────────────────────────────────────
 
         public void Disconnect()

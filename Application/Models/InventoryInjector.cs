@@ -39,16 +39,31 @@ namespace ToolKitV.Models
                 inventoryImagePath = $"{serverRootPath}/qs-inventory/html/images";
             }
 
-            // 2. Upload the images via the active provider (SFTP/Local)
+            // 2. High-Speed Bulk Image Upload via Staging
+            string stagingDir = Path.Combine(Path.GetTempPath(), "TGToolKit_Staging_Images");
+            if (Directory.Exists(stagingDir)) Directory.Delete(stagingDir, true);
+            Directory.CreateDirectory(stagingDir);
+
+            int stagedCount = 0;
             foreach (var item in items)
             {
                 if (!string.IsNullOrEmpty(item.LocalImagePath) && File.Exists(item.LocalImagePath))
                 {
-                    string remoteImagePath = $"{inventoryImagePath}/{item.ImageFileName}";
-                    await fs.UploadFileAsync(item.LocalImagePath, remoteImagePath);
-                    auditLog.LogChange(remoteImagePath, "Image Uploaded", $"Injected image for {item.SpawnCode}");
+                    string localStagedPath = Path.Combine(stagingDir, item.ImageFileName);
+                    File.Copy(item.LocalImagePath, localStagedPath, true);
+                    stagedCount++;
                 }
             }
+
+            if (stagedCount > 0)
+            {
+                // Blast all images in one single C++ transaction
+                await fs.UploadDirectoryBulkAsync(stagingDir, inventoryImagePath);
+                auditLog.LogChange(inventoryImagePath, "Bulk Image Upload", $"Pipelined {stagedCount} images to the server.");
+            }
+
+            // Cleanup
+            try { Directory.Delete(stagingDir, true); } catch { }
 
             // 3. Extract, Transpile, and Inject into the Lua file
             string currentItemsFile = await fs.ReadAllTextAsync(inventoryDataPath);

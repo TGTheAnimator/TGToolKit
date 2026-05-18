@@ -85,6 +85,24 @@ namespace ToolKitV.Models.Providers
             });
         }
 
+        public Task UploadDirectoryBulkAsync(string localDirectory, string remoteDirectory, ToolKitV.Models.LogWriter? log = null)
+        {
+            return Task.Run(() =>
+            {
+                try
+                {
+                    log?.LogWrite($"[LOCAL-BULK] Copying {localDirectory} to {remoteDirectory}...");
+                    CopyDirectory(localDirectory, remoteDirectory);
+                    log?.LogWrite($"[LOCAL-BULK SUCCESS] Copied all contents successfully.");
+                }
+                catch (Exception ex)
+                {
+                    log?.LogWrite($"[LOCAL-BULK FATAL ERROR] {ex.Message}");
+                    throw;
+                }
+            });
+        }
+
         private static void CopyDirectory(string sourceDir, string targetDir)
         {
             Directory.CreateDirectory(targetDir);

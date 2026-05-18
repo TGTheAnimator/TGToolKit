@@ -48,5 +48,8 @@ namespace ToolKitV.Models.Providers
 
         /// <summary>Uploads/writes a single file from a local path to a target path.</summary>
         Task UploadFileAsync(string localFilePath, string remoteFilePath);
+
+        /// <summary>Pipelined bulk high-speed directory upload.</summary>
+        Task UploadDirectoryBulkAsync(string localDirectory, string remoteDirectory, ToolKitV.Models.LogWriter? log = null);
     }
 }

@@ -685,84 +685,71 @@ namespace ToolKitV.Views
         }
         private async void btnIgnore_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is IssueViewModel issue)
+            // FIX: Cast to IssueViewModel first, then extract the RawWarning
+            if (sender is Button btn && btn.Tag is IssueViewModel vm)
             {
+                var warning = vm.RawWarning;
+
+                // 1. Instantly remove it from the screen so the app feels fast
+                _observableIssues.Remove(vm);
+
+                // 2. Save the ignore rule to disk (Resource-Specific)
                 if (_ignoreManager != null)
                 {
-                    await _ignoreManager.IgnoreIssueAsync(issue.ResourceName, issue.Signature, global: false);
-                    _observableIssues.Remove(issue);
-                    if (_observableIssues.Count == 0)
-                        CleanCard.Visibility = Visibility.Visible;
+                    await _ignoreManager.IgnoreIssueAsync(warning.ResourceName, warning.Message, global: false);
                 }
+                
+                if (_observableIssues.Count == 0)
+                    CleanCard.Visibility = Visibility.Visible;
             }
         }
 
         private async void btnIgnoreAll_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is IssueViewModel issue)
+            if (sender is Button btn && btn.Tag is IssueViewModel vm)
             {
+                var warning = vm.RawWarning;
+
+                // 1. Remove ALL instances of this specific warning from the UI
+                var itemsToRemove = _observableIssues.Where(i => i.Message == warning.Message).ToList();
+                foreach(var item in itemsToRemove)
+                {
+                    _observableIssues.Remove(item);
+                }
+
+                // 2. Save the global ignore rule to disk
                 if (_ignoreManager != null)
                 {
-                    await _ignoreManager.IgnoreIssueAsync(issue.ResourceName, issue.Signature, global: true);
-                    
-                    var toRemove = _observableIssues.Where(i => i.Signature == issue.Signature).ToList();
-                    foreach (var rm in toRemove)
-                        _observableIssues.Remove(rm);
-
-                    if (_observableIssues.Count == 0)
-                        CleanCard.Visibility = Visibility.Visible;
+                    await _ignoreManager.IgnoreIssueAsync(warning.ResourceName, warning.Message, global: true);
                 }
+                
+                if (_observableIssues.Count == 0)
+                    CleanCard.Visibility = Visibility.Visible;
             }
         }
 
-        private async void btnFix_Click(object sender, RoutedEventArgs e)
+        private void btnFix_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is IssueViewModel issue)
+            if (sender is Button btn && btn.Tag is IssueViewModel vm)
             {
-                if (issue.Signature.Contains("Stream conflict"))
+                var warning = vm.RawWarning;
+
+                if (warning.Message.Contains("Stream conflict"))
                 {
-                    var resources = issue.ResourceName.Split(',').Select(r => r.Trim()).ToList();
-                    StreamConflictDesc.Text = issue.Message;
+                    // Open the Stream Conflict Resolver Overlay
+                    StreamConflictDesc.Text = warning.Message;
+                    
+                    // Parse the comma-separated resource names into a list for the overlay
+                    var resources = warning.ResourceName.Split(',').Select(r => r.Trim()).ToList();
                     StreamConflictList.ItemsSource = resources;
+                    
                     StreamConflictOverlay.Visibility = Visibility.Visible;
                 }
-                else if (issue.Signature.Contains("fxmanifest.lua") || issue.Signature.Contains("__resource.lua") || issue.Signature.Contains("game declaration"))
+                else if (warning.Message.Contains("__resource.lua") || warning.Message.Contains("fx_version") || warning.Message.Contains("game declaration"))
                 {
-                    // For manifest issues, we run the dedicated auto-fixer pipeline
-                    ScanStatusText.Text = "Running Auto-Fixer for Manifests...";
-                    ScanningCard.Visibility = Visibility.Visible;
-                    
-                    IFileSystemProvider? provider = null;
-                    try
-                    {
-                        string targetPath = _isSftp ? SftpRootPath.TextValue : _lastScannedDirectory;
-
-                        if (_isSftp)
-                        {
-                            int fallback = int.TryParse(SftpPort.Value, out int pf) ? pf : 22;
-                            var (h, p) = ParseSftpHost(SftpHost.TextValue, fallback);
-                            provider = new SftpFileSystemProvider(h, p, SftpUsername.TextValue, SftpPassword.Password);
-                        }
-                        else
-                        {
-                            provider = new LocalFileSystemProvider();
-                        }
-                        
-                        var log = new LogWriter("=== Targeted Auto-Fix ===");
-                        await LinterAutoFixer.FixManifestErrorsAsync(provider, targetPath, log);
-                        
-                        MessageBox.Show("Manifest fixes applied successfully! Re-scanning...", "Fix Applied", MessageBoxButton.OK, MessageBoxImage.Information);
-                        RunLintButton_Click(this, new RoutedEventArgs());
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error applying fix: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        ScanningCard.Visibility = Visibility.Collapsed;
-                    }
-                    finally
-                    {
-                        provider?.Disconnect();
-                    }
+                    // For manifest issues, direct the user to use the master Auto-Fix button
+                    MessageBox.Show("This is a legacy manifest error.\n\nPlease use the master 'Auto-Fix Manifests' button at the bottom left to automatically resolve all manifest issues across the entire server at once.", 
+                        "Use Master Auto-Fixer", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
         }

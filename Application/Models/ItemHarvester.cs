@@ -38,7 +38,10 @@ namespace ToolKitV.Models
             var items = new List<HarvestedItem>();
             if (!Directory.Exists(scriptDirectory)) return items;
 
-            string[] files = Directory.GetFiles(scriptDirectory, "*.lua", SearchOption.AllDirectories);
+            // FIX: Aggressively search for both .lua and .txt files
+            var files = new List<string>();
+            files.AddRange(Directory.GetFiles(scriptDirectory, "*.lua", SearchOption.AllDirectories));
+            files.AddRange(Directory.GetFiles(scriptDirectory, "*.txt", SearchOption.AllDirectories));
 
             foreach (var file in files)
             {

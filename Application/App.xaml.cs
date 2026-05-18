@@ -16,11 +16,11 @@ namespace ToolKitV
         public App()
         {
             DispatcherUnhandledException += App_DispatcherUnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         }
 
         protected override async void OnStartup(StartupEventArgs e)
         {
-
             // Single-instance guard — prevent running TGToolKit more than once at a time.
             Mutex = new Mutex(true, "TGToolKit_SingleInstance", out _ownsMutex);
 
@@ -94,6 +94,31 @@ namespace ToolKitV
 
             // Mark handled — prevents the Windows hard-crash dialog from appearing
             e.Handled = true;
+        }
+
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            if (e.ExceptionObject is Exception ex)
+            {
+                try
+                {
+                    string crashLogPath = Models.AppPaths.CrashLogFilePath;
+                    string timestamp    = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    string entry =
+                        $"{'=',-50}\n" +
+                        $"[{timestamp}] TGToolKit v3.5.0 — UNHANDLED BACKGROUND EXCEPTION\n" +
+                        $"{'=',-50}\n" +
+                        $"MESSAGE:\n  {ex.Message}\n\n" +
+                        $"INNER EXCEPTION:\n  {ex.InnerException?.Message ?? "None"}\n\n" +
+                        $"STACK TRACE:\n{ex.StackTrace}\n" +
+                        $"{new string('-', 50)}\n\n";
+
+                    File.AppendAllText(crashLogPath, entry);
+                }
+                catch
+                {
+                }
+            }
         }
     }
 }

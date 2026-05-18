@@ -72,36 +72,58 @@ namespace ToolKitV.Models
             var audit = new AuditLogger();
             rootPath = rootPath.TrimEnd('/', '\\');
 
+            // Create a local staging area that mirrors the remote file structure
+            string stagingDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "TGToolKit_Staging_Bridge");
+            if (System.IO.Directory.Exists(stagingDir)) System.IO.Directory.Delete(stagingDir, true);
+            
+            int filesPatched = 0;
+
             foreach (var recipe in recipes)
             {
                 foreach (var patch in recipe.Patches)
                 {
-                    string targetFile = $"{rootPath}/{recipe.TargetResource}/{patch.TargetFilePath}";
+                    string remoteTargetFile = $"{rootPath}/{recipe.TargetResource}/{patch.TargetFilePath}";
 
                     try
                     {
-                        string content = await provider.ReadAllTextAsync(targetFile);
+                        // Note: We still have to read one-by-one to get the original text, 
+                        // but we eliminate the slow Write transaction.
+                        string content = await provider.ReadAllTextAsync(remoteTargetFile);
                         string original = content;
 
-                        if (ApplyPatch(ref content, patch, log))
+                        if (ApplyPatch(ref content, patch, log) && content != original)
                         {
-                            if (content != original)
-                            {
-                                await provider.CreateBackupAsync(targetFile);
-                                await provider.WriteAllTextAsync(targetFile, content);
-                                audit.LogChange(targetFile, $"Applied Patch for {recipe.RecipeId}", recipe.Description);
-                            }
+                            // Mirror the remote path structure in our local staging folder
+                            string relativeStructure = $"{recipe.TargetResource}/{patch.TargetFilePath}";
+                            string localStagedFile = System.IO.Path.Combine(stagingDir, relativeStructure);
+                            
+                            string? localDir = System.IO.Path.GetDirectoryName(localStagedFile);
+                            if (localDir != null) System.IO.Directory.CreateDirectory(localDir);
+                            System.IO.File.WriteAllText(localStagedFile, content);
+                            
+                            await provider.CreateBackupAsync(remoteTargetFile);
+                            audit.LogChange(remoteTargetFile, $"Applied Patch for {recipe.RecipeId}", recipe.Description);
+                            filesPatched++;
                         }
                     }
                     catch (Exception ex)
                     {
-                        log.LogWrite($"[ERROR] Failed to apply patch for {recipe.RecipeId} to {targetFile}: {ex.Message}");
+                        log?.LogWrite($"[ERROR] Failed to apply patch for {recipe.RecipeId} to {remoteTargetFile}: {ex.Message}");
                     }
                 }
             }
 
+            // Blast all patched files back to the server in exactly ONE transaction
+            if (filesPatched > 0)
+            {
+                log?.LogWrite($"[BRIDGE] Pipelining {filesPatched} patched files to the server...");
+                await provider.UploadDirectoryBulkAsync(stagingDir, rootPath, log);
+            }
+
+            try { System.IO.Directory.Delete(stagingDir, true); } catch { }
+
             string auditReport = audit.GenerateReport();
-            string auditFile = AppPaths.AuditLogFilePath;
+            string auditFile = AppPaths.AuditLogFilePath; // Utilizing the new UAC compliant paths
             System.IO.File.WriteAllText(auditFile, auditReport);
         }
     }

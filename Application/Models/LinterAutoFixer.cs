@@ -541,6 +541,11 @@ namespace ToolKitV.Models
             int fixesApplied = 0;
             log?.LogWrite("=== Starting Dedicated Manifest Auto-Fixer ===");
 
+            // Create a local staging area that mirrors the remote file structure
+            string stagingDir = Path.Combine(Path.GetTempPath(), "TGToolKit_Staging_Manifests");
+            if (Directory.Exists(stagingDir)) Directory.Delete(stagingDir, true);
+            Directory.CreateDirectory(stagingDir);
+
             // ─── SWEEP 1: Convert Legacy __resource.lua files ────────────────────────
             var legacyManifests = await fs.DiscoverFilesAsync(serverRootPath, "__resource.lua");
             log?.LogWrite($"[SWEEP 1] Found {legacyManifests.Count} __resource.lua file(s) to convert.");
@@ -569,12 +574,18 @@ namespace ToolKitV.Models
                     text = Regex.Replace(text, @"shared_scripts\s*\{",  "shared_scripts {");
                     text = Regex.Replace(text, @"files\s*\{",           "files {");
 
-                    // Write the new file then explicitly delete the old one over SFTP
-                    await fs.WriteAllTextAsync(newManifestPath, text);
+                    // Stage the new manifest locally
+                    string relativePath = Path.GetRelativePath(serverRootPath, newManifestPath);
+                    string localStagedFile = Path.Combine(stagingDir, relativePath);
+                    string? localDir = Path.GetDirectoryName(localStagedFile);
+                    if (localDir != null) Directory.CreateDirectory(localDir);
+                    File.WriteAllText(localStagedFile, text);
+
+                    // Delete the old legacy manifest on server
                     await fs.DeleteFileAsync(oldManifest);
 
                     fixesApplied++;
-                    log?.LogWrite($"[FIXED] Converted {oldManifest} → fxmanifest.lua");
+                    log?.LogWrite($"[STAGED] Converted {oldManifest} → fxmanifest.lua (staged)");
                 }
                 catch (Exception ex)
                 {
@@ -640,9 +651,16 @@ namespace ToolKitV.Models
                     if (modified)
                     {
                         await fs.CreateBackupAsync(manifest);
-                        await fs.WriteAllTextAsync(manifest, text);
+                        
+                        // Stage the modified manifest locally
+                        string relativePath = Path.GetRelativePath(serverRootPath, manifest);
+                        string localStagedFile = Path.Combine(stagingDir, relativePath);
+                        string? localDir = Path.GetDirectoryName(localStagedFile);
+                        if (localDir != null) Directory.CreateDirectory(localDir);
+                        File.WriteAllText(localStagedFile, text);
+
                         fixesApplied++;
-                        log?.LogWrite($"[FIXED] Injected missing headers into {manifest}");
+                        log?.LogWrite($"[STAGED] Injected missing headers into {manifest} (staged)");
                     }
                 }
                 catch (Exception ex)
@@ -650,6 +668,15 @@ namespace ToolKitV.Models
                     log?.LogWrite($"[ERROR] Failed to fix headers in {manifest}: {ex.Message}");
                 }
             }
+
+            // Blast all patched manifests back to the server in exactly ONE transaction
+            if (fixesApplied > 0)
+            {
+                log?.LogWrite($"[MANIFEST] Pipelining {fixesApplied} modified/converted manifests to the server...");
+                await fs.UploadDirectoryBulkAsync(stagingDir, serverRootPath, log);
+            }
+
+            try { Directory.Delete(stagingDir, true); } catch { }
 
             log?.LogWrite($"=== Manifest Auto-Fixer Finished. {fixesApplied} file(s) fixed. ===");
             return fixesApplied;
