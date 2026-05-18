@@ -14,7 +14,7 @@ namespace ToolKitV.Models
         public RecipeManager()
         {
             // Assuming a 'Recipes' folder next to the TGToolKit executable
-            _recipeDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Recipes");
+            _recipeDirectory = AppPaths.RecipesFolder;
             if (!Directory.Exists(_recipeDirectory))
             {
                 Directory.CreateDirectory(_recipeDirectory);

@@ -7,7 +7,7 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300"/>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="350"/>
+            <ColumnDefinition Width="300"/>
         </Grid.ColumnDefinitions>
 
         <Border Grid.Column="0" Background="#0A0A0A" BorderBrush="#222" BorderThickness="1" CornerRadius="8" Padding="15" Margin="0,0,10,0">
@@ -28,25 +28,53 @@
             </StackPanel>
         </Border>
 
-        <Border Grid.Column="1" Background="#0A0A0A" BorderBrush="#222" BorderThickness="1" CornerRadius="8" Padding="15" Margin="0,0,10,0">
+        <Border Grid.Column="1" Background="#0A0A0A" BorderBrush="#222" BorderThickness="1" CornerRadius="8" Padding="15" Margin="15,0,15,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="120"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-                    <TextBlock Text="Target File Path:" Foreground="#888" FontFamily="Fonts/#TT Norms" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <TextBox x:Name="txtFilePath" Width="300" Background="#111" Foreground="White" BorderBrush="#333" Padding="5"/>
+                <TextBlock Grid.Row="0" Text="Recipe Patches (Multi-File Setup)" Foreground="White" FontFamily="Fonts/#TT Norms" FontWeight="Bold" Margin="0,0,0,5"/>
+                
+                <ListBox x:Name="lstPatches" Grid.Row="1" Background="#050505" Foreground="White" BorderBrush="#333" SelectionChanged="lstPatches_SelectionChanged">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding TargetFilePath, TargetNullValue='[New Unnamed Patch]'}" Foreground="#30E080" FontFamily="Consolas"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,15">
+                    <Button Content="+ Add Patch" Height="28" Padding="10,0" Background="#1A1A1A" Foreground="White" BorderBrush="#333" Click="btnAddPatch_Click" Margin="0,0,10,0"/>
+                    <Button Content="− Remove Selected" Height="28" Padding="10,0" Background="#1A1A1A" Foreground="#888" BorderBrush="#333" Click="btnRemovePatch_Click"/>
                 </StackPanel>
 
-                <TextBlock Grid.Row="0" Text="Search Snippet (Paste Raw Lua):" Foreground="#FFB347" FontFamily="Fonts/#TT Norms" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                <TextBox x:Name="txtSearch" Grid.Row="1" Background="#111" Foreground="#FFB347" FontFamily="Consolas" FontSize="13" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" BorderBrush="#333" Padding="10" Margin="0,0,0,15"/>
+                <Grid x:Name="PatchEditorGrid" Grid.Row="3" IsEnabled="False">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="2" Text="Replace With (Paste Raw Lua):" Foreground="#4CFF70" FontFamily="Fonts/#TT Norms" FontWeight="Bold" Margin="0,0,0,5"/>
-                <TextBox x:Name="txtReplace" Grid.Row="3" Background="#111" Foreground="#4CFF70" FontFamily="Consolas" FontSize="13" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" BorderBrush="#333" Padding="10"/>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="Target File Path:" Foreground="#888" FontFamily="Fonts/#TT Norms" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBox x:Name="txtFilePath" Width="300" Background="#111" Foreground="White" BorderBrush="#333" Padding="5" TextChanged="Editor_TextChanged"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="1" Text="Search Snippet (Paste Raw Lua):" Foreground="#FFB347" FontFamily="Fonts/#TT Norms" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <TextBox x:Name="txtSearch" Grid.Row="2" Background="#111" Foreground="#FFB347" FontFamily="Consolas" FontSize="13" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" BorderBrush="#333" Padding="10" Margin="0,0,0,15" TextChanged="Editor_TextChanged"/>
+
+                    <TextBlock Grid.Row="3" Text="Replace With (Paste Raw Lua):" Foreground="#4CFF70" FontFamily="Fonts/#TT Norms" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <TextBox x:Name="txtReplace" Grid.Row="4" Background="#111" Foreground="#4CFF70" FontFamily="Consolas" FontSize="13" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" BorderBrush="#333" Padding="10" Margin="0,0,0,10" TextChanged="Editor_TextChanged"/>
+
+                    <CheckBox x:Name="chkIsRegex" Grid.Row="5" Content="Use Advanced Regex Pattern" Foreground="#888" Checked="Editor_TextChanged" Unchecked="Editor_TextChanged"/>
+                </Grid>
             </Grid>
         </Border>
 

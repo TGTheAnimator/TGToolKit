@@ -10,7 +10,7 @@ namespace ToolKitV.Models
 {
     public static class GlobalTranspiler
     {
-        public static string GlobalRecipesDirectory => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GlobalRecipes");
+        public static string GlobalRecipesDirectory => AppPaths.GlobalRecipesFolder;
 
         public static void SeedDefaultRecipes()
         {

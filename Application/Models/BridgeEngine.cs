@@ -54,7 +54,7 @@ namespace ToolKitV.Models
             }
             catch (RegexMatchTimeoutException)
             {
-                log.LogWrite($"[CRITICAL] Regex timeout while attempting to patch {patch.TargetFilePath}. Pattern may be too broad.");
+                log?.LogWrite($"[CRITICAL] Regex timeout while attempting to patch {patch.TargetFilePath}. Pattern may be too broad.");
                 return false;
             }
             catch (Exception ex)
@@ -101,7 +101,7 @@ namespace ToolKitV.Models
             }
 
             string auditReport = audit.GenerateReport();
-            string auditFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tgtoolkit_audit.txt");
+            string auditFile = AppPaths.AuditLogFilePath;
             System.IO.File.WriteAllText(auditFile, auditReport);
         }
     }

@@ -158,7 +158,7 @@ namespace ToolKitV.Views
                 var audit = new AuditLogger();
                 await InventoryInjector.InjectItemsAsync(fs, rootPath, targetInventory, _harvestedItems.ToList(), audit);
 
-                string auditFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tgtoolkit_item_audit.txt");
+                string auditFile = AppPaths.ItemAuditLogFilePath;
                 File.WriteAllText(auditFile, audit.GenerateReport());
 
                 MessageBox.Show($"Injection complete! The items.lua was backed up and appended.\n\nAudit log saved to:\n{auditFile}", "Injection Success", MessageBoxButton.OK, MessageBoxImage.Information);

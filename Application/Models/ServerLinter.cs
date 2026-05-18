@@ -19,6 +19,12 @@ namespace ToolKitV.Models
             public string   ResourceName { get; init; } = string.Empty;
             public string   Message      { get; init; } = string.Empty;
             public Severity Severity     { get; init; } = Severity.Warning;
+
+            // UI Helper: Only show the "Fix" button for stream conflicts or manifest errors
+            public bool IsFixable => Message.Contains("Stream conflict", StringComparison.OrdinalIgnoreCase) || 
+                                     Message.Contains("__resource.lua", StringComparison.OrdinalIgnoreCase) || 
+                                     Message.Contains("fx_version", StringComparison.OrdinalIgnoreCase) || 
+                                     Message.Contains("game declaration", StringComparison.OrdinalIgnoreCase);
         }
 
         public class LinterResult

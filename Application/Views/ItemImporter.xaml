@@ -51,19 +51,16 @@
                 </ContextMenu>
             </DataGrid.ContextMenu>
             <DataGrid.Columns>
-                <!-- Read Only columns for basic reference -->
-                <DataGridTextColumn Header="Spawn Code" Binding="{Binding SpawnCode}" IsReadOnly="True" Width="120" Foreground="#888"/>
-                <DataGridTextColumn Header="Label" Binding="{Binding Label}" IsReadOnly="True" Width="120" Foreground="#888"/>
+                <DataGridTextColumn Header="Spawn Code" Binding="{Binding SpawnCode, UpdateSourceTrigger=PropertyChanged}" Width="120" Foreground="#FFF"/>
+                <DataGridTextColumn Header="Label" Binding="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Width="120" Foreground="#FFF"/>
+                <DataGridTextColumn Header="Image File Name" Binding="{Binding ImageFileName, UpdateSourceTrigger=PropertyChanged}" Width="140" Foreground="#FFF"/>
                 
-                <DataGridTemplateColumn Header="Image File Status" Width="180" IsReadOnly="True">
+                <DataGridTemplateColumn Header="Image Status" Width="120" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding ImageFileName}" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="White"/>
-                                <TextBlock Text="{Binding LocalImagePath, Converter={StaticResource ImageStatusConverter}}" 
-                                           Foreground="{Binding LocalImagePath, Converter={StaticResource ImageColorConverter}}" 
-                                           FontWeight="Bold" VerticalAlignment="Center"/>
-                            </StackPanel>
+                            <TextBlock Text="{Binding LocalImagePath, Converter={StaticResource ImageStatusConverter}}" 
+                                       Foreground="{Binding LocalImagePath, Converter={StaticResource ImageColorConverter}}" 
+                                       FontWeight="Bold" VerticalAlignment="Center"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

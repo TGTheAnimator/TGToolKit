@@ -18,276 +18,23 @@
         </Grid.ColumnDefinitions>
 
         <!-- ══ COLUMN 0 — Controls ══ -->
-        <DockPanel Grid.Column="0" LastChildFill="True">
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-            <Grid DockPanel.Dock="Bottom" Margin="0 16 0 0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="8"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="6"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="6"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="6"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="6"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="15"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+            <StackPanel Grid.Row="1" Margin="0 16 0 0">
+                <Button x:Name="RunLintButton" Content="Run Linter" Height="45" Background="#1A0A0A" BorderBrush="#C0132A" Foreground="White" FontWeight="Bold" Margin="0,0,0,10" IsEnabled="False" Click="RunLintButton_Click"/>
+                <Button x:Name="FixAllButton" Content="&#x26A1; Fix All Manifests" Height="35" Foreground="#E0A030" BorderBrush="#E0A030" Margin="0,0,0,10" Background="Transparent" Visibility="Collapsed" Click="FixAllButton_Click"/>
+                <Button x:Name="FixManifestsButton" Content="&#x1FA84; Auto-Fix Manifests" Height="35" Foreground="#FFD700" BorderBrush="#FFD700" Margin="0,0,0,10" Background="Transparent" Visibility="Collapsed" Click="FixManifestsButton_Click"/>
+                <Button x:Name="AutoWireButton" Content="&#x1F9E0; Auto-Wire Config" Height="35" Foreground="#30E080" BorderBrush="#30E080" Margin="0,0,0,10" Background="Transparent" Visibility="Collapsed" Click="AutoWireButton_Click"/>
+                <Button x:Name="RunIntegrationBridgeButton" Content="&#x1F30D; Run Integration Bridge" Height="35" Foreground="#E08030" BorderBrush="#E08030" Margin="0,0,0,10" Background="Transparent" Visibility="Collapsed" Click="RunIntegrationBridgeButton_Click"/>
+                <Button x:Name="RestoreBackupsButton" Content="↩ Restore Backups" Height="30" Foreground="#666" BorderThickness="0" Background="Transparent" Visibility="Collapsed" Click="RestoreBackupsButton_Click"/>
+            </StackPanel>
 
-                <local:Button x:Name="RunLintButton"
-                              Grid.Row="0"
-                              Title="Run Linter"
-                              IsButtonEnabledValue="False"
-                              Click="RunLintButton_Click"/>
-
-                <!-- Fix All button — converts deprecated __resource.lua files -->
-                <Button x:Name="FixAllButton"
-                        Grid.Row="2"
-                        Content="&#x26A1;  Fix All Manifests"
-                        Click="FixAllButton_Click"
-                        Cursor="Hand"
-                        Visibility="Collapsed"
-                        FontFamily="Fonts/#TT Norms"
-                        FontSize="12"
-                        FontWeight="Bold"
-                        Height="38"
-                        BorderThickness="0">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Bg"
-                                                CornerRadius="8"
-                                                Background="#1A4CFF70"
-                                                BorderBrush="#354CFF70"
-                                                BorderThickness="1">
-                                            <TextBlock Text="{TemplateBinding Content}"
-                                                       Foreground="#4CFF70"
-                                                       FontFamily="Fonts/#TT Norms"
-                                                       FontSize="12"
-                                                       FontWeight="Bold"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bg" Property="Background"  Value="#2E4CFF70"/>
-                                                <Setter TargetName="Bg" Property="BorderBrush" Value="#604CFF70"/>
-                                            </Trigger>
-                                            <Trigger Property="IsPressed" Value="True">
-                                                <Setter TargetName="Bg" Property="Background" Value="#454CFF70"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </Button.Style>
-                </Button>
-
-                <!-- Auto-Fix Manifests button — dedicated two-sweep manifest fixer, post-scan (local + SFTP) -->
-                <Button x:Name="FixManifestsButton"
-                        Grid.Row="4"
-                        Content="&#x1FA84;  Auto-Fix Manifests"
-                        Click="FixManifestsButton_Click"
-                        Cursor="Hand"
-                        Visibility="Collapsed"
-                        FontFamily="Fonts/#TT Norms"
-                        FontSize="12"
-                        FontWeight="Bold"
-                        Height="38"
-                        BorderThickness="0">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Bg"
-                                                CornerRadius="8"
-                                                Background="#1AFFD700"
-                                                BorderBrush="#40FFD700"
-                                                BorderThickness="1">
-                                            <TextBlock Text="{TemplateBinding Content}"
-                                                       Foreground="#FFD700"
-                                                       FontFamily="Fonts/#TT Norms"
-                                                       FontSize="12"
-                                                       FontWeight="Bold"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bg" Property="Background"  Value="#30FFD700"/>
-                                                <Setter TargetName="Bg" Property="BorderBrush" Value="#65FFD700"/>
-                                            </Trigger>
-                                            <Trigger Property="IsPressed" Value="True">
-                                                <Setter TargetName="Bg" Property="Background" Value="#48FFD700"/>
-                                            </Trigger>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter TargetName="Bg" Property="Opacity" Value="0.4"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </Button.Style>
-                </Button>
-
-                <!-- Auto-Wire button — fuzzy ecosystem wirer, post-scan (local + SFTP) -->
-                <Button x:Name="AutoWireButton"
-                        Grid.Row="6"
-                        Content="&#x1F9E0;  Auto-Wire Config"
-                        Click="AutoWireButton_Click"
-                        Cursor="Hand"
-                        Visibility="Collapsed"
-                        FontFamily="Fonts/#TT Norms"
-                        FontSize="12"
-                        FontWeight="Bold"
-                        Height="38"
-                        BorderThickness="0">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Bg"
-                                                CornerRadius="8"
-                                                Background="#20FFB347"
-                                                BorderBrush="#40FFB347"
-                                                BorderThickness="1">
-                                            <TextBlock Text="{TemplateBinding Content}"
-                                                       Foreground="#FFB347"
-                                                       FontFamily="Fonts/#TT Norms"
-                                                       FontSize="12"
-                                                       FontWeight="Bold"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bg" Property="Background"  Value="#33FFB347"/>
-                                                <Setter TargetName="Bg" Property="BorderBrush" Value="#65FFB347"/>
-                                            </Trigger>
-                                            <Trigger Property="IsPressed" Value="True">
-                                                <Setter TargetName="Bg" Property="Background" Value="#50FFB347"/>
-                                            </Trigger>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter TargetName="Bg" Property="Opacity" Value="0.4"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </Button.Style>
-                </Button>
-
-                <!-- Integration Bridge button — triggers Omni-Wirer Level 2 -->
-                <Button x:Name="RunIntegrationBridgeButton"
-                        Grid.Row="7"
-                        Content="&#x1F30D;  Run Integration Bridge"
-                        Click="RunIntegrationBridgeButton_Click"
-                        Cursor="Hand"
-                        Visibility="Collapsed"
-                        FontFamily="Fonts/#TT Norms"
-                        FontSize="12"
-                        FontWeight="Bold"
-                        Height="38"
-                        BorderThickness="0">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Bg"
-                                                CornerRadius="8"
-                                                Background="#20E08030"
-                                                BorderBrush="#40E08030"
-                                                BorderThickness="1">
-                                            <TextBlock Text="{TemplateBinding Content}"
-                                                       Foreground="#E08030"
-                                                       FontFamily="Fonts/#TT Norms"
-                                                       FontSize="12"
-                                                       FontWeight="Bold"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bg" Property="Background"  Value="#33E08030"/>
-                                                <Setter TargetName="Bg" Property="BorderBrush" Value="#65E08030"/>
-                                            </Trigger>
-                                            <Trigger Property="IsPressed" Value="True">
-                                                <Setter TargetName="Bg" Property="Background" Value="#50E08030"/>
-                                            </Trigger>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter TargetName="Bg" Property="Opacity" Value="0.4"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </Button.Style>
-                </Button>
-
-                <!-- Restore Backups button — subdued steel outline, non-competing with primary actions -->
-                <Button x:Name="RestoreBackupsButton"
-                        Grid.Row="9"
-                        Content="↩  Restore Backups"
-                        Click="RestoreBackupsButton_Click"
-                        Cursor="Hand"
-                        Visibility="Collapsed"
-                        FontFamily="Fonts/#TT Norms"
-                        FontSize="11"
-                        FontWeight="DemiBold"
-                        Height="34"
-                        Margin="0,4,0,0"
-                        BorderThickness="0">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Bg"
-                                                CornerRadius="8"
-                                                Background="#10AAAAAA"
-                                                BorderBrush="#30AAAAAA"
-                                                BorderThickness="1">
-                                            <TextBlock Text="{TemplateBinding Content}"
-                                                       Foreground="#888888"
-                                                       FontFamily="Fonts/#TT Norms"
-                                                       FontSize="11"
-                                                       FontWeight="DemiBold"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bg" Property="Background"  Value="#18AAAAAA"/>
-                                                <Setter TargetName="Bg" Property="BorderBrush" Value="#50AAAAAA"/>
-                                            </Trigger>
-                                            <Trigger Property="IsPressed" Value="True">
-                                                <Setter TargetName="Bg" Property="Background" Value="#25AAAAAA"/>
-                                            </Trigger>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter TargetName="Bg" Property="Opacity" Value="0.4"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </Button.Style>
-                </Button>
-            </Grid>
-
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
+            <ScrollViewer Grid.Row="0"
+                          VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
                           Padding="0 0 8 0">
                 <StackPanel>
@@ -415,7 +162,7 @@
                     </Border>
                 </StackPanel>
             </ScrollViewer>
-        </DockPanel>
+        </Grid>
 
         <!-- ══ COLUMN 2 — Results ══ -->
         <ScrollViewer Grid.Column="2"
@@ -571,16 +318,16 @@
                                                            TextWrapping="Wrap"/>
                                             </StackPanel>
                                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
-                                                <Button Content="🔧 Fix" Height="25" Width="50" Background="#222" Foreground="#30E080" 
+                                                <Button Style="{x:Null}" Content="🔧 Fix" Height="25" Padding="5,2" Background="#222" Foreground="#30E080" 
                                                         FontFamily="Fonts/#TT Norms" FontSize="11" BorderThickness="0" Margin="0,0,5,0" Cursor="Hand"
                                                         Visibility="{Binding IsFixable, Converter={StaticResource BoolToVis}}"
                                                         Click="btnFix_Click" Tag="{Binding}"/>
 
-                                                <Button Content="👁️ Ignore" Height="25" Width="60" Background="#222" Foreground="#888" 
+                                                <Button Style="{x:Null}" Content="👁️ Ignore" Height="25" Padding="5,2" Background="#222" Foreground="#888" 
                                                         FontFamily="Fonts/#TT Norms" FontSize="11" BorderThickness="0" Margin="0,0,5,0" Cursor="Hand"
                                                         Click="btnIgnore_Click" Tag="{Binding}"/>
 
-                                                <Button Content="👁️ Ignore All" Height="25" Width="70" Background="#222" Foreground="#888" 
+                                                <Button Style="{x:Null}" Content="👁️ Ignore All" Height="25" Padding="5,2" Background="#222" Foreground="#888" 
                                                         FontFamily="Fonts/#TT Norms" FontSize="11" BorderThickness="0" Cursor="Hand"
                                                         Click="btnIgnoreAll_Click" Tag="{Binding}"/>
                                             </StackPanel>

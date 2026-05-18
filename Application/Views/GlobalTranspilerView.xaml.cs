@@ -88,7 +88,7 @@ namespace ToolKitV.Views
                     log, 
                     progress);
 
-                string auditPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tgtoolkit_audit.txt");
+                string auditPath = AppPaths.AuditLogFilePath;
                 MessageBox.Show($"Mass Transpilation Complete!\n\nModified {modifiedCount} file(s) across the server.\n\nAudit log saved to:\n{auditPath}", "Transpiler Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)

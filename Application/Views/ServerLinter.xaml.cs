@@ -135,11 +135,11 @@ namespace ToolKitV.Views
 
             if (!_isSftp)
             {
-                RunLintButton.IsButtonEnabledValue = !string.IsNullOrWhiteSpace(LocalFolder?.Path);
+                RunLintButton.IsEnabled = !string.IsNullOrWhiteSpace(LocalFolder?.Path);
             }
             else
             {
-                RunLintButton.IsButtonEnabledValue =
+                RunLintButton.IsEnabled =
                     !string.IsNullOrWhiteSpace(SftpHost?.TextValue) &&
                     !string.IsNullOrWhiteSpace(SftpUsername?.TextValue) &&
                     !string.IsNullOrWhiteSpace(SftpRootPath?.TextValue) &&
@@ -149,7 +149,7 @@ namespace ToolKitV.Views
 
         private async void RunLintButton_Click(object sender, RoutedEventArgs e)
         {
-            RunLintButton.IsButtonEnabledValue = false;
+            RunLintButton.IsEnabled = false;
             CleanCard.Visibility               = Visibility.Collapsed;
             ScanningCard.Visibility            = Visibility.Visible;
             ScanStatusText.Text                = _isSftp ? "Connecting to SFTP server…" : "Initialising scan…";
@@ -230,7 +230,7 @@ namespace ToolKitV.Views
                             Message       = w.Message,
                             SeverityColor = color,
                             Signature     = w.Message,
-                            IsFixable     = w.Message.Contains("fxmanifest.lua") || w.Message.Contains("Stream conflict"),
+                            IsFixable     = w.IsFixable,
                             RawWarning    = w
                         });
                     }
@@ -270,7 +270,7 @@ namespace ToolKitV.Views
 
                     if (modal.ShowDialog() == true && modal.ResolvedChoices.Count > 0)
                     {
-                        RunLintButton.IsButtonEnabledValue = false;
+                        RunLintButton.IsEnabled = false;
                         IFileSystemProvider? fs2 = null;
                         try
                         {
@@ -310,7 +310,7 @@ namespace ToolKitV.Views
                         finally
                         {
                             fs2?.Disconnect();
-                            RunLintButton.IsButtonEnabledValue = true;
+                            RunLintButton.IsEnabled = true;
                         }
                     }
                 }
@@ -336,7 +336,7 @@ namespace ToolKitV.Views
             finally
             {
                 ScanningCard.Visibility            = Visibility.Collapsed;
-                RunLintButton.IsButtonEnabledValue = true;
+                RunLintButton.IsEnabled = true;
             }
         }
 
@@ -399,7 +399,7 @@ namespace ToolKitV.Views
 
             FixManifestsButton.IsEnabled       = false;
             AutoWireButton.IsEnabled           = false;
-            RunLintButton.IsButtonEnabledValue = false;
+            RunLintButton.IsEnabled = false;
 
             IFileSystemProvider? fs = null;
             try
@@ -437,7 +437,7 @@ namespace ToolKitV.Views
                 fs?.Disconnect();
                 FixManifestsButton.IsEnabled       = true;
                 AutoWireButton.IsEnabled           = true;
-                RunLintButton.IsButtonEnabledValue = true;
+                RunLintButton.IsEnabled = true;
             }
         }
 
@@ -477,7 +477,7 @@ namespace ToolKitV.Views
             if (confirm != MessageBoxResult.Yes) return;
 
             AutoWireButton.IsEnabled           = false;
-            RunLintButton.IsButtonEnabledValue = false;
+            RunLintButton.IsEnabled = false;
 
             IFileSystemProvider? fs = null;
             try
@@ -519,7 +519,7 @@ namespace ToolKitV.Views
             {
                 fs?.Disconnect();
                 AutoWireButton.IsEnabled           = true;
-                RunLintButton.IsButtonEnabledValue = true;
+                RunLintButton.IsEnabled = true;
             }
         }
 
@@ -544,7 +544,7 @@ namespace ToolKitV.Views
 
             RestoreBackupsButton.IsEnabled     = false;
             AutoWireButton.IsEnabled           = false;
-            RunLintButton.IsButtonEnabledValue = false;
+            RunLintButton.IsEnabled = false;
 
             IFileSystemProvider? fs = null;
             try
@@ -589,7 +589,7 @@ namespace ToolKitV.Views
                 fs?.Disconnect();
                 RestoreBackupsButton.IsEnabled     = true;
                 AutoWireButton.IsEnabled           = true;
-                RunLintButton.IsButtonEnabledValue = true;
+                RunLintButton.IsEnabled = true;
             }
         }
 
@@ -612,7 +612,7 @@ namespace ToolKitV.Views
                 ScanningCard.Visibility = Visibility.Visible;
 
                 // Identify applicable recipes using the cached resources from the scan
-                string recipesDir = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Recipes");
+                string recipesDir = AppPaths.RecipesFolder;
                 var availableResources = new List<string>(_lastResult.InstalledResources);
                 _applicableRecipes = RecipeManager.GetApplicableRecipes(recipesDir, availableResources);
 
@@ -670,7 +670,7 @@ namespace ToolKitV.Views
                 var log = new LogWriter("=== Integration Bridge ===");
                 await BridgeEngine.ApplyRecipesAsync(provider, targetPath, _applicableRecipes, log);
                 
-                string auditFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tgtoolkit_audit.txt");
+                string auditFile = AppPaths.AuditLogFilePath;
                 MessageBox.Show($"Integration Bridge complete! Patched {_applicableRecipes.Count} recipes.\n\nAn audit log has been saved to:\n{auditFile}", "Integration Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch(Exception ex)

@@ -14,16 +14,16 @@ namespace ToolKitV.Models
             List<HarvestedItem> items, 
             AuditLogger auditLog)
         {
-            // 1. Determine paths based on the target inventory
             string inventoryDataPath = "";
             string inventoryImagePath = "";
 
+            // 1. Path Resolution
             if (targetInventory == "ox_inventory")
             {
                 inventoryDataPath = $"{serverRootPath}/{targetInventory}/data/items.lua";
                 inventoryImagePath = $"{serverRootPath}/{targetInventory}/web/images";
             }
-            else if (targetInventory == "qb-core / qb-inventory")
+            else if (targetInventory.Contains("qb-inventory") || targetInventory.Contains("qb-core"))
             {
                 inventoryDataPath = $"{serverRootPath}/qb-core/shared/items.lua";
                 inventoryImagePath = $"{serverRootPath}/qb-inventory/html/images"; 
@@ -45,39 +45,60 @@ namespace ToolKitV.Models
                 if (!string.IsNullOrEmpty(item.LocalImagePath) && File.Exists(item.LocalImagePath))
                 {
                     string remoteImagePath = $"{inventoryImagePath}/{item.ImageFileName}";
-                    
-                    // Works perfectly for both SftpFileSystemProvider (WinSCP) and LocalFileSystemProvider
                     await fs.UploadFileAsync(item.LocalImagePath, remoteImagePath);
-                    
                     auditLog.LogChange(remoteImagePath, "Image Uploaded", $"Injected image for {item.SpawnCode}");
                 }
             }
 
-            // 3. Append the items to the Lua file
+            // 3. Extract, Transpile, and Inject into the Lua file
             string currentItemsFile = await fs.ReadAllTextAsync(inventoryDataPath);
-            
-            // Back up the file just in case
             await fs.CreateBackupAsync(inventoryDataPath);
 
-            // Strip the final closing bracket so we can insert items inside the table
             int lastBracketIndex = currentItemsFile.LastIndexOf('}');
             if (lastBracketIndex > -1)
             {
                 string updatedFile = currentItemsFile.Substring(0, lastBracketIndex);
+                updatedFile += "\n\t-- [ TGToolKit Auto-Transpiled Items ] --\n";
                 
-                updatedFile += "\n\t-- [ TGToolKit Auto-Injected Items ] --\n";
                 foreach (var item in items)
                 {
-                    // Add the raw snippet, ensuring a trailing comma
-                    // The RawLuaSnippet holds whatever they edited (stats, metadata, etc)
-                    updatedFile += $"\t{item.RawLuaSnippet},\n";
+                    // Transpile the item into the exact framework requirement
+                    string transpiledLua = TranspileToTargetFormat(item, targetInventory);
+                    updatedFile += $"{transpiledLua}\n";
                 }
                 
-                updatedFile += "\n}\n"; // Close the table back up
+                updatedFile += "\n}\n"; 
 
                 await fs.WriteAllTextAsync(inventoryDataPath, updatedFile);
-                auditLog.LogChange(inventoryDataPath, "Items Appended", $"Added {items.Count} items to the master inventory.");
+                auditLog.LogChange(inventoryDataPath, "Items Appended", $"Transpiled and injected {items.Count} items into {targetInventory}.");
             }
+        }
+
+        // --- THE FORMAT GENERATOR ---
+        private static string TranspileToTargetFormat(HarvestedItem item, string targetInventory)
+        {
+            // Fallbacks for missing metadata
+            float weight = item.Weight > 0 ? item.Weight : 100; // Default 100g if missing
+            string label = string.IsNullOrEmpty(item.Label) ? item.SpawnCode : item.Label;
+
+            if (targetInventory == "ox_inventory")
+            {
+                // Ox is minimal: ['code'] = { label = 'Name', weight = 100 }
+                return $"\t['{item.SpawnCode}'] = {{\n\t\tlabel = '{label}',\n\t\tweight = {weight},\n\t\tdescription = 'Imported by TGToolKit'\n\t}},";
+            }
+            else if (targetInventory == "jpr-inventory" || targetInventory.Contains("qb-inventory"))
+            {
+                // JPR & QB require heavy one-line metadata injection
+                return $"\t['{item.SpawnCode}'] = {{ name = '{item.SpawnCode}', label = '{label}', weight = {weight}, type = 'item', image = '{item.ImageFileName}', unique = false, useable = true, shouldClose = true, combinable = nil, description = 'Imported by TGToolKit' }},";
+            }
+            else if (targetInventory == "qs-inventory")
+            {
+                // QS uses strict bracket notation for inner properties
+                return $"\t['{item.SpawnCode}'] = {{\n\t\t['name'] = '{item.SpawnCode}',\n\t\t['label'] = '{label}',\n\t\t['weight'] = {weight},\n\t\t['type'] = 'item',\n\t\t['image'] = '{item.ImageFileName}',\n\t\t['unique'] = false,\n\t\t['useable'] = true,\n\t\t['shouldClose'] = true,\n\t\t['combinable'] = nil,\n\t\t['description'] = 'Imported by TGToolKit'\n\t}},";
+            }
+
+            // Default fail-safe
+            return $"\t['{item.SpawnCode}'] = {{ label = '{label}' }},";
         }
     }
 }

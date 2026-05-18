@@ -65,11 +65,11 @@ namespace ToolKitV
             try
             {
                 // Structured, appendable crash log — each crash session is clearly separated
-                string crashLogPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "crash.log");
+                string crashLogPath = Models.AppPaths.CrashLogFilePath;
                 string timestamp    = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                 string entry =
                     $"{'=',-50}\n" +
-                    $"[{timestamp}] TGToolKit v3.4.1 — UNHANDLED EXCEPTION\n" +
+                    $"[{timestamp}] TGToolKit v3.5.0 — UNHANDLED EXCEPTION\n" +
                     $"{'=',-50}\n" +
                     $"MESSAGE:\n  {e.Exception.Message}\n\n" +
                     $"INNER EXCEPTION:\n  {e.Exception.InnerException?.Message ?? "None"}\n\n" +
@@ -86,7 +86,7 @@ namespace ToolKitV
             MessageBox.Show(
                 "TGToolKit encountered an unexpected error and recovered safely.\n\n" +
                 $"Error: {e.Exception.Message}\n\n" +
-                "Full details have been written to crash.log in the application folder.\n" +
+                "Full details have been written to Logs/crash.log inside the AppData folder.\n" +
                 "Please report this file to the developer.",
                 "TGToolKit — System Exception",
                 MessageBoxButton.OK,

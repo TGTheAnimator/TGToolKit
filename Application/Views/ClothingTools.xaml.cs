@@ -21,23 +21,35 @@ namespace ToolKitV.Views
 
         private void OnResourcePathChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (ResourceFolder == null) return;
-            _resourcePath = ResourceFolder.Path;
-            ValidateInputs();
+            try
+            {
+                if (ResourceFolder == null) return;
+                _resourcePath = ResourceFolder.Path;
+                ValidateInputs();
+            }
+            catch { }
         }
 
         private void OnPackSettingsChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (PackNameInput == null || PedTargetInput == null) return;
-            _packName = PackNameInput.TextValue;
-            _pedTarget = PedTargetInput.TextValue;
-            ValidateInputs();
+            try
+            {
+                if (PackNameInput == null || PedTargetInput == null) return;
+                _packName = PackNameInput.TextValue ?? "";
+                _pedTarget = PedTargetInput.TextValue ?? "";
+                ValidateInputs();
+            }
+            catch { }
         }
 
         private void ValidateInputs()
         {
-            if (GenerateButton == null) return;
-            GenerateButton.IsButtonEnabled = !string.IsNullOrWhiteSpace(_resourcePath) && Directory.Exists(_resourcePath) && !string.IsNullOrWhiteSpace(_packName);
+            try
+            {
+                if (GenerateButton == null) return;
+                GenerateButton.IsButtonEnabled = !string.IsNullOrWhiteSpace(_resourcePath) && Directory.Exists(_resourcePath) && !string.IsNullOrWhiteSpace(_packName);
+            }
+            catch { }
         }
 
         private void UIElement_OnDrop(object sender, DragEventArgs e)

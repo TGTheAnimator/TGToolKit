@@ -12,45 +12,20 @@
             <Setter Property="Width" Value="18"/>
             <Setter Property="Height" Value="18"/>
             <Setter Property="Margin" Value="1"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#20FFFFFF"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="Root"
-                                CornerRadius="3"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                Background="#10FFFFFF">
-                            <VisualStateManager.VisualStateGroups>
-                                <VisualStateGroup x:Name="CheckStates">
-                                    <VisualStateGroup.Transitions>
-                                        <VisualTransition GeneratedDuration="0:0:0.08"/>
-                                    </VisualStateGroup.Transitions>
-                                    <VisualState x:Name="Checked">
-                                        <Storyboard>
-                                            <ColorAnimation Storyboard.TargetName="Root"
-                                                            Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                                            To="#C0132A" Duration="0:0:0.08"/>
-                                            <ColorAnimation Storyboard.TargetName="Root"
-                                                            Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)"
-                                                            To="#FF5555" Duration="0:0:0.08"/>
-                                        </Storyboard>
-                                    </VisualState>
-                                    <VisualState x:Name="Unchecked">
-                                        <Storyboard>
-                                            <ColorAnimation Storyboard.TargetName="Root"
-                                                            Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                                            To="#1AFFFFFF" Duration="0:0:0.08"/>
-                                            <ColorAnimation Storyboard.TargetName="Root"
-                                                            Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)"
-                                                            To="#20FFFFFF" Duration="0:0:0.08"/>
-                                        </Storyboard>
-                                    </VisualState>
-                                </VisualStateGroup>
-                            </VisualStateManager.VisualStateGroups>
-                        </Border>
+                        <Border x:Name="Root" CornerRadius="3" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#1AFFFFFF"/>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsOn}" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#C0132A"/>
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#FF5555"/>
+                            </DataTrigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -194,11 +169,23 @@
                                     <TextBlock Text="|" Foreground="#20FFFFFF" FontFamily="Consolas" FontSize="10" Width="80"/>
                                 </ItemsControl.Items>
                             </ItemsControl>
-                        </Grid>
-
-                        <!-- Siren rows -->
-                        <ItemsControl x:Name="SirenRowsList">
-                            <ItemsControl.ItemTemplate>
+                        </Grid>                        <!-- Siren rows -->
+                        <ListBox x:Name="SirenRowsList" Background="Transparent" BorderThickness="0" SelectionChanged="SirenRowsList_SelectionChanged">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Style.Resources>
+                                        <!-- Remove default Windows selection colors -->
+                                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="Transparent"/>
+                                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="Transparent"/>
+                                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White"/>
+                                    </Style.Resources>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Grid Margin="0 2">
                                         <Grid.ColumnDefinitions>
@@ -209,18 +196,13 @@
                                         </Grid.ColumnDefinitions>
 
                                         <!-- Row label (click to select) -->
-                                        <Button Grid.Column="0"
-                                                Content="{Binding LightName}"
-                                                Click="RowLabel_Click"
-                                                Tag="{Binding}"
-                                                Background="#01000000"
-                                                Foreground="{Binding LabelForeground}"
-                                                BorderThickness="0"
-                                                HorizontalContentAlignment="Left"
-                                                FontFamily="Fonts/#TT Norms"
-                                                FontSize="11"
-                                                Cursor="Hand"
-                                                Padding="0"/>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding LightName}"
+                                                   Foreground="{Binding LabelForeground}"
+                                                   FontFamily="Fonts/#TT Norms"
+                                                   FontSize="11"
+                                                   VerticalAlignment="Center"
+                                                   Cursor="Hand"/>
 
                                         <!-- Tick cells -->
                                         <ItemsControl Grid.Column="1" ItemsSource="{Binding Ticks}">
@@ -232,7 +214,8 @@
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
                                                     <ToggleButton Style="{StaticResource TickStyle}"
-                                                                  IsChecked="{Binding IsOn, Mode=TwoWay}"/>
+                                                                  IsChecked="{Binding IsOn, Mode=TwoWay}"
+                                                                  Click="TickCell_Click"/>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
@@ -249,7 +232,7 @@
                                         <!-- Shift / Invert micro-buttons -->
                                         <StackPanel Grid.Column="3" Orientation="Horizontal"
                                                     VerticalAlignment="Center" Margin="6 0 0 0">
-                                            <Button Content="◄"
+                                            <Button Style="{x:Null}" Content="◄"
                                                     Tag="{Binding}"
                                                     Click="ShiftLeft_Click"
                                                     ToolTip="Shift pattern left (circular)"
@@ -262,7 +245,7 @@
                                                     BorderBrush="#15FFFFFF"
                                                     BorderThickness="1"
                                                     Margin="0 0 2 0"/>
-                                            <Button Content="INV"
+                                            <Button Style="{x:Null}" Content="INV"
                                                     Tag="{Binding}"
                                                     Click="Invert_Click"
                                                     ToolTip="Invert pattern (flip all ticks)"
@@ -276,7 +259,7 @@
                                                     BorderBrush="#25C0132A"
                                                     BorderThickness="1"
                                                     Margin="0 0 2 0"/>
-                                            <Button Content="►"
+                                            <Button Style="{x:Null}" Content="►"
                                                     Tag="{Binding}"
                                                     Click="ShiftRight_Click"
                                                     ToolTip="Shift pattern right (circular)"
@@ -291,8 +274,8 @@
                                         </StackPanel>
                                     </Grid>
                                 </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
                     </StackPanel>
                 </ScrollViewer>
             </Border>

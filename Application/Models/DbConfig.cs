@@ -51,7 +51,7 @@ namespace ToolKitV.Models
         }
 
         private static readonly string ConfigPath =
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "db_config.json");
+            AppPaths.DbConfigFilePath;
 
         public static DbConfig Load()
         {

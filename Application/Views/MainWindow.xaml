@@ -9,20 +9,20 @@
         mc:Ignorable="d"
         Title="TGToolKit" Width="1300" Height="740"
         MinWidth="1100" MinHeight="640"
-        WindowStyle="None"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="SingleBorderWindow"
+        Foreground="White"
+        Background="#050505"
         ResizeMode="CanResizeWithGrip"
         AllowsTransparency="False"
         FocusVisualStyle="{x:Null}">
 
-    <!-- Deep near-black, slight cool undertone -->
-    <Window.Background>
-        <SolidColorBrush Color="#080810"/>
-    </Window.Background>
 
-    <!-- WindowChrome for native drop shadow while keeping custom chrome -->
+
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="0"
-                            ResizeBorderThickness="0"
+                            ResizeBorderThickness="6"
+                            CornerRadius="0"
                             GlassFrameThickness="0"/>
     </shell:WindowChrome.WindowChrome>
 
@@ -106,32 +106,24 @@
                                VerticalAlignment="Center"/>
 
                     <TextBlock x:Name="AppSubtitle"
-                               Text="FiveM Texture Optimizer"
+                               Text="FiveM ToolKit"
                                Foreground="#55FFFFFF"
                                FontFamily="Fonts/#TT Norms"
                                FontSize="12"
                                VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- Window controls -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal"
-                            VerticalAlignment="Center" Margin="0 0 6 0">
-                    <!-- Minimize -->
-                    <Button Cursor="Hand" BorderThickness="0"
-                            Click="MinimizeButton_Click" ToolTip="Minimize">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0 0 6 0">
+                    
+                    <Button WindowChrome.IsHitTestVisibleInChrome="True" Cursor="Hand" BorderThickness="0" Click="MinimizeButton_Click" ToolTip="Minimize">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Setter Property="Background" Value="Transparent"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="Button">
-                                            <Border x:Name="Bg" Width="38" Height="38"
-                                                    CornerRadius="6"
-                                                    Background="{TemplateBinding Background}">
-                                                <TextBlock Text="—" Foreground="#60FFFFFF"
-                                                           FontSize="11"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"/>
+                                            <Border x:Name="Bg" Width="38" Height="38" CornerRadius="6" Background="{TemplateBinding Background}">
+                                                <TextBlock Text="—" Foreground="#60FFFFFF" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
@@ -144,22 +136,38 @@
                             </Style>
                         </Button.Style>
                     </Button>
-                    <!-- Close -->
-                    <Button Cursor="Hand" BorderThickness="0"
-                            Click="CloseButton_Click" ToolTip="Close">
+
+                    <Button WindowChrome.IsHitTestVisibleInChrome="True" Cursor="Hand" BorderThickness="0" Click="MaximizeButton_Click" ToolTip="Maximize">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Setter Property="Background" Value="Transparent"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="Button">
-                                            <Border x:Name="Bg" Width="38" Height="38"
-                                                    CornerRadius="6"
-                                                    Background="{TemplateBinding Background}">
-                                                <TextBlock Text="✕" Foreground="#60FFFFFF"
-                                                           FontSize="11"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"/>
+                                            <Border x:Name="Bg" Width="38" Height="38" CornerRadius="6" Background="{TemplateBinding Background}">
+                                                <TextBlock Text="☐" Foreground="#60FFFFFF" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,2"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bg" Property="Background" Value="#15FFFFFF"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <Button WindowChrome.IsHitTestVisibleInChrome="True" Cursor="Hand" BorderThickness="0" Click="CloseButton_Click" ToolTip="Close">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Bg" Width="38" Height="38" CornerRadius="6" Background="{TemplateBinding Background}">
+                                                <TextBlock Text="✕" Foreground="#60FFFFFF" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">

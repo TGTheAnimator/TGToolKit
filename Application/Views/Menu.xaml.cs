@@ -121,6 +121,13 @@ namespace ToolKitV.Views
             NavigateTo?.Invoke("ServerLinter");
         }
 
+        private void DeploymentStudio_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (_activeView == "DeploymentStudio") return;
+            SetActiveItem("DeploymentStudio");
+            NavigateTo?.Invoke("DeploymentStudio");
+        }
+
         private void SirenBuilder_Click(object sender, MouseButtonEventArgs e)
         {
             if (_activeView == "SirenBuilder") return;
@@ -184,6 +191,7 @@ namespace ToolKitV.Views
             bool audioActive         = view == "AudioViewer";
             bool ytdSplitActive      = view == "YtdSplitter";
             bool serverLinterActive  = view == "ServerLinter";
+            bool deploymentStudioActive = view == "DeploymentStudio";
             bool sirenBuilderActive  = view == "SirenBuilder";
             bool recipeStudioActive  = view == "RecipeStudio";
             bool itemImporterActive  = view == "ItemImporter";
@@ -259,6 +267,15 @@ namespace ToolKitV.Views
             ServerLinterStripe.Visibility     = serverLinterActive ? Visibility.Visible   : Visibility.Collapsed;
             ServerLinterLabel.FontWeight      = serverLinterActive ? FontWeights.Bold     : FontWeights.Normal;
             ServerLinterLabel.Foreground      = serverLinterActive
+                ? new SolidColorBrush(Colors.White)
+                : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
+
+            // Deployment Studio item
+            DeploymentStudioBg.Visibility         = deploymentStudioActive ? Visibility.Visible   : Visibility.Collapsed;
+            DeploymentStudioInactiveBg.Visibility = deploymentStudioActive ? Visibility.Collapsed : Visibility.Visible;
+            DeploymentStudioStripe.Visibility     = deploymentStudioActive ? Visibility.Visible   : Visibility.Collapsed;
+            DeploymentStudioLabel.FontWeight      = deploymentStudioActive ? FontWeights.Bold     : FontWeights.Normal;
+            DeploymentStudioLabel.Foreground      = deploymentStudioActive
                 ? new SolidColorBrush(Colors.White)
                 : new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
 

@@ -21,6 +21,13 @@
  
  ## ✨ Features
  
+ ### 🚀 Zero-to-Hero Orchestrator *(New in v3.5.0)*
+ The ultimate FiveM server compiler and automatic deployer.
+ - **Unified 9-Phase Chain of Command:** Orchestrates the entire server compilation flow sequentially (Safety Backup → Static Analysis → Manifest Updates → SQL Matrix Injection → Smart Asset Harvesting → Global Modernization & Transpiling → Bridge Integration Patches → Discord Webhooks & Locale Synchronization → Live Delta Push).
+ - **Temporal Failsafe Snapshot:** Automatically freezes the server state into a compressed backup before any files are modified. If anything goes wrong, a one-click rollback restores the server instantly.
+ - **SQL Matrix Database Verification:** Automatically reads every SQL file on the server, parses table schemas, inserts `IF NOT EXISTS` syntax to prevent database duplicate crashes, and injects tables into your live MySQL/MariaDB server using MySqlConnector.
+ - **Dynamic Checkpoint Tracker:** A beautiful glassmorphic WPF dashboard tracks deployment progress in real-time with visual checkmark states and console output.
+ 
  ### 🌐 Global Qbox Transpiler Engine *(New in v3.5.0)*
  A unified Mass-Scan Core Engine that automates server-wide modernization in a single pass.
  - **Recipes:** Instantly parses and converts outdated client/server Lua files, replacing legacy notification functions (`QBCore.Functions.Notify`) and outdated DrawText exports with modern, optimized `ox_lib` equivalents (`lib.notify`, `lib.showTextUI`).

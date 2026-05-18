@@ -159,7 +159,35 @@ namespace ToolKitV.Views
                             LogEntry = "[SFTP] Initiating high-speed directory download..."
                         });
 
-                        await activeFs.DownloadDirectoryAsync(_rootPath, tempWorkspace);
+                        if (activeFs is LocalFileSystemProvider)
+                        {
+                            await WorkspaceManager.CloneWorkspaceTextFilesOnlyAsync(_rootPath, tempWorkspace);
+                        }
+                        else
+                        {
+                            // === TARGETED SFTP DOWNLOAD ===
+                            // Prevents crashing the disk by ignoring .yft / .ytd and exclusively pulling .lua files
+                            progress.Report(new SyncProgress { Percentage = 15, Status = "Discovering remote Lua files...", LogEntry = "[SFTP] Querying server for configurations..." });
+                            
+                            var luaFiles = await activeFs.DiscoverFilesAsync(_rootPath, "*.lua");
+                            int dlCount = 0;
+                            
+                            foreach (var remoteFile in luaFiles)
+                            {
+                                dlCount++;
+                                if (dlCount % 10 == 0) // Update UI every 10 files to prevent thread lag
+                                {
+                                    progress.Report(new SyncProgress { Percentage = 15 + (int)((float)dlCount / luaFiles.Count * 25), Status = $"Downloading config {dlCount}/{luaFiles.Count}...", LogEntry = $"[SFTP] Pulled {Path.GetFileName(remoteFile)}" });
+                                }
+                                
+                                string relative = remoteFile.Replace(_rootPath, "").TrimStart('/', '\\');
+                                string localTarget = Path.Combine(tempWorkspace, relative);
+                                Directory.CreateDirectory(Path.GetDirectoryName(localTarget)!);
+                                
+                                string content = await activeFs.ReadAllTextAsync(remoteFile);
+                                File.WriteAllText(localTarget, content);
+                            }
+                        }
 
                         progress.Report(new SyncProgress
                         {

@@ -20,22 +20,34 @@ namespace ToolKitV.Views
 
         private void OnResourcePathChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (ResourceFolder == null) return;
-            _resourcePath = ResourceFolder.Path;
-            ValidateInputs();
+            try
+            {
+                if (ResourceFolder == null) return;
+                _resourcePath = ResourceFolder.Path;
+                ValidateInputs();
+            }
+            catch { }
         }
 
         private void OnSettingsChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (DownsampleAudio == null) return;
-            _downsampleEnabled = DownsampleAudio.IsToogled;
-            ValidateInputs();
+            try
+            {
+                if (DownsampleAudio == null) return;
+                _downsampleEnabled = DownsampleAudio.IsToogled;
+                ValidateInputs();
+            }
+            catch { }
         }
 
         private void ValidateInputs()
         {
-            if (OptimizeButton == null) return;
-            OptimizeButton.IsButtonEnabled = !string.IsNullOrWhiteSpace(_resourcePath) && Directory.Exists(_resourcePath) && _downsampleEnabled;
+            try
+            {
+                if (OptimizeButton == null) return;
+                OptimizeButton.IsButtonEnabled = !string.IsNullOrWhiteSpace(_resourcePath) && Directory.Exists(_resourcePath) && _downsampleEnabled;
+            }
+            catch { }
         }
 
         private void UIElement_OnDrop(object sender, DragEventArgs e)

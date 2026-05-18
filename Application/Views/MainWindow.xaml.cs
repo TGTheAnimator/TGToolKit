@@ -23,6 +23,7 @@ namespace ToolKitV
         private readonly EconomyDashboard    _economyView      = new();
         private readonly GlobalTranspilerView  _globalTranspilerView;
         private readonly SnapshotManager        _snapshotManagerView;
+        private readonly DeploymentStudio       _deploymentView   = new();
 
 
         public MainWindow()
@@ -114,6 +115,11 @@ namespace ToolKitV
                     AppSubtitle.Text     = "  Disaster Recovery";
                     break;
 
+                case "DeploymentStudio":
+                    MainContent.Content  = _deploymentView;
+                    AppSubtitle.Text     = "  Zero-to-Hero Orchestrator";
+                    break;
+
 
                 case "Economy":
                     MainContent.Content  = _economyView;
@@ -146,9 +152,25 @@ namespace ToolKitV
         }
 
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
-            => WindowState = WindowState.Minimized;
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void MaximizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (WindowState == WindowState.Maximized)
+            {
+                WindowState = WindowState.Normal;
+            }
+            else
+            {
+                WindowState = WindowState.Maximized;
+            }
+        }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
-            => Close();
+        {
+            Application.Current.Shutdown();
+        }
     }
 }

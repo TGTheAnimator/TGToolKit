@@ -52,7 +52,7 @@ namespace ToolKitV.Models
             catch (Exception ex)
             {
                 // Silently log to file for debugging if needed
-                try { File.AppendAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log.txt"), $"\n[{DateTime.Now}] Update check failed: {ex.Message}"); } catch { }
+                try { File.AppendAllText(Path.Combine(AppPaths.LogsFolder, "updater_log.txt"), $"\n[{DateTime.Now}] Update check failed: {ex.Message}"); } catch { }
                 Debug.WriteLine($"Update check failed: {ex.Message}");
             }
 

@@ -17,7 +17,7 @@ namespace ToolKitV.Models
         public string RootPath { get; set; } = "/home/container/resources";
 
         private static readonly string ConfigPath =
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "linter_config.json");
+            AppPaths.LinterConfigFilePath;
 
         public static LinterConfig Load()
         {

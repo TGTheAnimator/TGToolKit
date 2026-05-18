@@ -22,9 +22,7 @@ namespace ToolKitV.Models
 
         public LinterIgnoreManager(string localWorkspaceRoot)
         {
-            // Normalize path to prevent double slashes
-            string root = localWorkspaceRoot.TrimEnd('\\', '/');
-            _ignoreFilePath = Path.Combine(root, ".tgtoolkit_ignore.json");
+            _ignoreFilePath = AppPaths.GlobalIgnoreFilePath;
             LoadIgnores();
         }
 

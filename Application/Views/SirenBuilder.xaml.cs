@@ -99,6 +99,7 @@ namespace ToolKitV.Views
 
             _selectedRow.ApplyPattern(pattern);
             StatusText.Text = $"Applied '{(PresetCombo.SelectedItem as ComboBoxItem)?.Content}' to {_selectedRow.LightName}.";
+            Generate_Click(null!, null!);
         }
 
         private void Generate_Click(object sender, RoutedEventArgs e)
@@ -111,7 +112,10 @@ namespace ToolKitV.Views
 
             string xml = SirenGenerator.GenerateCarcols(_rows.ToList());
             XmlOutput.Text = xml;
-            StatusText.Text = $"Generated carcols.meta snippet for {_rows.Count} siren(s). Copy and paste into your vehicle's carcols.meta <sirens> block.";
+            
+            // Only update status if explicitly clicked, else keep the preset status
+            if (sender != null)
+                StatusText.Text = $"Generated carcols.meta snippet for {_rows.Count} siren(s). Copy and paste into your vehicle's carcols.meta <sirens> block.";
         }
 
         private void Copy_Click(object sender, RoutedEventArgs e)
@@ -140,6 +144,12 @@ namespace ToolKitV.Views
             timer.Start();
         }
 
+        private void TickCell_Click(object sender, RoutedEventArgs e)
+        {
+            // Auto-generate XML when a tick cell is toggled manually
+            Generate_Click(null!, null!);
+        }
+
         // ─── Per-row shift / invert handlers ─────────────────────────────────────
 
         private void ShiftLeft_Click(object sender, RoutedEventArgs e)
@@ -148,6 +158,7 @@ namespace ToolKitV.Views
             {
                 row.ShiftLeft();
                 StatusText.Text = $"{row.LightName}: pattern shifted ◄ left.";
+                Generate_Click(null!, null!);
             }
         }
 
@@ -157,6 +168,7 @@ namespace ToolKitV.Views
             {
                 row.ShiftRight();
                 StatusText.Text = $"{row.LightName}: pattern shifted ► right.";
+                Generate_Click(null!, null!);
             }
         }
 
@@ -166,6 +178,22 @@ namespace ToolKitV.Views
             {
                 row.InvertPattern();
                 StatusText.Text = $"{row.LightName}: pattern inverted.";
+                Generate_Click(null!, null!);
+            }
+        }
+
+        private void SirenRowsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (SirenRowsList.SelectedItem is SirenRow row)
+            {
+                // Deselect previous row
+                if (_selectedRow != null)
+                    _selectedRow.IsSelected = false;
+
+                _selectedRow = row;
+                _selectedRow.IsSelected = true;
+
+                StatusText.Text = $"✔ Selected: {row.LightName} — now pick a preset and click 'Apply to Selected'.";
             }
         }
     }

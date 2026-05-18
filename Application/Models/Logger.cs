@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Reflection;
 
@@ -6,6 +6,8 @@ namespace ToolKitV.Models
 {
     public class LogWriter
     {
+        public static event Action<string>? OnLog;
+
         private string m_exePath = string.Empty;
         public LogWriter(string logMessage)
         {
@@ -35,6 +37,7 @@ namespace ToolKitV.Models
             catch (Exception)
             {
             }
+            OnLog?.Invoke(logMessage);
         }
 
         public static void Log(string logMessage, TextWriter txtWriter)
@@ -51,3 +54,4 @@ namespace ToolKitV.Models
         }
     }
 }
+

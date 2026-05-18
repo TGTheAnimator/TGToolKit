@@ -13,7 +13,7 @@ namespace ToolKitV.Models
     public static class SnapshotEngine
     {
         public static string SnapshotDirectory =>
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Snapshots");
+            AppPaths.SnapshotsFolder;
 
         /// <summary>
         /// Compresses localWorkspace into a timestamped zip archive under the app-local
